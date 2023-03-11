@@ -1,3 +1,7 @@
+ifeq ($(DEBUG), 1)
+	EXTRA_CFLAGS = -O -g -DPRP_DEBUG -v
+endif
+
 KVERSION = $(shell uname -r)
 
 obj-m += prp.o
