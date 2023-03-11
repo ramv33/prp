@@ -1,7 +1,7 @@
 #undef PDEBUG
-#ifdef DEBUG
+#ifdef PRP_DEBUG
 #	ifdef __KERNEL__
-#		define PDEBUG(fmt, args...) printk(KERN_DEBUG "scull: " fmt, ## args)
+#		define PDEBUG(fmt, args...) printk(KERN_DEBUG "[PRP] " fmt, ## args)
 #	else
 #		define PDEBUG(fmt, args...) fprintf(stderr, fmt, ## args)
 #	endif
