@@ -2,6 +2,7 @@
 #include <net/rtnetlink.h>
 #include <net/genetlink.h>
 #include "prp_main.h"
+#include "prp_link.h"
 #include "prp_netlink.h"
 #include "prp_dev.h"
 #include "debug.h"
