@@ -1,5 +1,5 @@
 ifeq ($(DEBUG), 1)
-	EXTRA_CFLAGS = -O -g -DPRP_DEBUG -v
+	EXTRA_CFLAGS = -O -g -DPRP_DEBUG
 endif
 
 KVERSION = $(shell uname -r)
