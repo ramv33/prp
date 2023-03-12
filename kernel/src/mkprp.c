@@ -62,6 +62,12 @@ struct nl_msg *build_msg(int slave1_index, int slave2_index)
 		.ifi_family = AF_UNSPEC,
 		.ifi_index = 0,		/* automatically assign ifindex */
 	};
+	struct attrs {
+		struct nlattr	slave1_attr;	/* IFLA_PRP_SLAVE1 */
+		int		slave1_index;	/* data, i.e, interface index */
+		struct nlattr	slave2_attr;	/* IFLA_PRP_SLAVE2 */
+		int		slave2_index;	/* data, i.e, interface index */
+	} __attribute__((packed)) attrs;
 
 	if (!(msg = nlmsg_alloc_simple(RTM_NEWLINK, NLM_F_EXCL|NLM_F_CREATE)))
 		return NULL;
@@ -73,6 +79,14 @@ struct nl_msg *build_msg(int slave1_index, int slave2_index)
 	if (!(info = nla_nest_start(msg, IFLA_LINKINFO)))
 		goto nla_put_failure;
 	NLA_PUT_STRING(msg, IFLA_INFO_KIND, "prp");
+	/* Setup attributes */
+	attrs.slave1_attr.nla_len = 8;			/* nlmsghdr(4) + index(4) */
+	attrs.slave1_attr.nla_type = IFLA_PRP_SLAVE1;
+	attrs.slave1_index = slave1_index;
+	attrs.slave2_attr.nla_len = 8;
+	attrs.slave2_attr.nla_type = IFLA_PRP_SLAVE2;
+	attrs.slave2_index = slave2_index;
+	nla_put(msg, IFLA_INFO_DATA, sizeof(attrs), &attrs);
 	/* Finish nesting link info and close container */
 	nla_nest_end(msg, info);
 
