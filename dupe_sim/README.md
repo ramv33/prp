@@ -7,11 +7,13 @@ Generates frames, i.e, sequence numbers, and "sends" them by calling `sendframes
 each LAN. The argument `nframes` specifies the number of frames that it sends at once.
 For example, if seqnr=0 and nframes=3, it sends the frames [0, 1, 2] at a time by calling
 `sendframes()`.
+
 It calls `sendframes()` for both the LANs by running two separate threads with
 `sendframes` as the starting point, with arguments for the LAN\_id and the list of
 frames. Since python threads cannot be run parallely, we randomize the order in which
 the two threads are called. We then wait for the two threads to complete, increment
 the sequence number and continue.
+
 TODO: maybe use multiprocessing or something to have it run truly parallely.
 
 ## def sendframes(LAN_id, frames)
