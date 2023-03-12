@@ -10,7 +10,7 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	/* Check if it is our device, i.e, PRP virtual interface */
-	PDEBUG(KERN_INFO "[PRP] %s: ", dev->name);
+	PDEBUG("%s: ", dev->name);
 	switch (event) {
 	case NETDEV_UP:
 		PDEBUG("up\n");
