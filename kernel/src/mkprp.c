@@ -10,12 +10,13 @@
 
 struct nl_sock *setup_nl(void);
 struct nl_msg *build_msg(int slave1_index, int slave2_index);
+int delete_iface(struct nl_sock *sk, int ifindex);
+int create_iface(struct nl_sock *sk, int slave1_index, int slave2_index);
 int recv_nlmsgs(struct nl_sock *sk);
 
 int main(int argc, char *argv[])
 {
 	struct nl_sock	*sk;
-	struct nl_msg	*msg;
 	int		slave1_index, slave2_index;
 	int		ret;
 	
@@ -24,6 +25,19 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	puts("[+] nl setup success");
 
+	/* TODO
+	 * Check argv[1]
+	 * 	if "del"
+	 * 		read argv[2] to get iface name
+	 * 		convert to ifindex using if_nametoindex
+	 *		if (delete_iface(sk, ifindex) < 0)
+	 *			goto fail
+	 *	else if "add"
+	 *		read argv[2] and argv[3] to get slave iface names
+	 *		convert to ifindex
+	 *		if (create_iface(sk, slave1_index, slave2_index) < 0)
+	 *			goto fail
+	 */
 	if (argc == 3) {
 		slave1_index = if_nametoindex(argv[1]);
 		if (!slave1_index)
@@ -33,25 +47,36 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "invalid interface '%s': %s\n", argv[2], strerror(errno));
 	}
 
-	msg = build_msg(slave1_index, slave2_index);
-	if (!msg)
+	if (create_iface(sk, slave1_index, slave2_index) < 0)
 		goto fail;
-	ret = nl_send_auto(sk, msg);
-	if (ret < 0) {
-		nl_perror(ret, "nl_send_auto");
-		ret = EXIT_FAILURE;
-		goto fail;
-	}
 
-	recv_nlmsgs(sk);
-	ret = 0;
-	
+	recv_nlmsgs(sk);	/* TODO: parse and display results */
+
 fail:
 	if (sk)
 		nl_socket_free(sk);
-	if (msg)
-		nlmsg_free(msg);
 	return EXIT_FAILURE;
+}
+
+int delete_iface(struct nl_sock *sk, int ifindex)
+{
+	/* TODO */
+}
+
+int create_iface(struct nl_sock *sk, int slave1_index, int slave2_index)
+{
+	struct nl_msg *msg;
+	int ret;
+
+	msg = build_msg(slave1_index, slave2_index);
+	if (!msg)
+		return -1;
+	ret = nl_send_auto(sk, msg);
+	if (ret < 0) {
+		nl_perror(ret, "nl_send_auto");
+		return -1;
+	}
+	nlmsg_free(msg);
 }
 
 struct nl_msg *build_msg(int slave1_index, int slave2_index)
