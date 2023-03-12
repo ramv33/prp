@@ -60,7 +60,7 @@ struct nl_msg *build_msg(int slave1_index, int slave2_index)
 	struct nlattr *info;
 	struct ifinfomsg ifi = {
 		.ifi_family = AF_UNSPEC,
-		.ifi_index = slave1_index,
+		.ifi_index = 0,		/* automatically assign ifindex */
 	};
 
 	if (!(msg = nlmsg_alloc_simple(RTM_NEWLINK, NLM_F_EXCL|NLM_F_CREATE)))
