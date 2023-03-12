@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 		goto fail;
 	ret = nl_send_auto(sk, msg);
 	if (ret < 0) {
-		nl_perror(ret, "nl_send_auto_complete");
+		nl_perror(ret, "nl_send_auto");
 		ret = EXIT_FAILURE;
 		goto fail;
 	}
