@@ -10,12 +10,13 @@
 
 struct nl_sock *setup_nl(void);
 struct nl_msg *build_msg(int slave1_index, int slave2_index);
+int delete_iface(struct nl_sock *sk, int ifindex);
+int create_iface(struct nl_sock *sk, int slave1_index, int slave2_index);
 int recv_nlmsgs(struct nl_sock *sk);
 
 int main(int argc, char *argv[])
 {
 	struct nl_sock	*sk;
-	struct nl_msg	*msg;
 	int		slave1_index, slave2_index;
 	int		ret;
 	
@@ -24,6 +25,19 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	puts("[+] nl setup success");
 
+	/* TODO
+	 * Check argv[1]
+	 * 	if "del"
+	 * 		read argv[2] to get iface name
+	 * 		convert to ifindex using if_nametoindex
+	 *		if (delete_iface(sk, ifindex) < 0)
+	 *			goto fail
+	 *	else if "add"
+	 *		read argv[2] and argv[3] to get slave iface names
+	 *		convert to ifindex
+	 *		if (create_iface(sk, slave1_index, slave2_index) < 0)
+	 *			goto fail
+	 */
 	if (argc == 3) {
 		slave1_index = if_nametoindex(argv[1]);
 		if (!slave1_index)
@@ -33,25 +47,36 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "invalid interface '%s': %s\n", argv[2], strerror(errno));
 	}
 
-	msg = build_msg(slave1_index, slave2_index);
-	if (!msg)
+	if (create_iface(sk, slave1_index, slave2_index) < 0)
 		goto fail;
-	ret = nl_send_auto(sk, msg);
-	if (ret < 0) {
-		nl_perror(ret, "nl_send_auto");
-		ret = EXIT_FAILURE;
-		goto fail;
-	}
 
-	recv_nlmsgs(sk);
-	ret = 0;
-	
+	recv_nlmsgs(sk);	/* TODO: parse and display results */
+
 fail:
 	if (sk)
 		nl_socket_free(sk);
-	if (msg)
-		nlmsg_free(msg);
 	return EXIT_FAILURE;
+}
+
+int delete_iface(struct nl_sock *sk, int ifindex)
+{
+	/* TODO */
+}
+
+int create_iface(struct nl_sock *sk, int slave1_index, int slave2_index)
+{
+	struct nl_msg *msg;
+	int ret;
+
+	msg = build_msg(slave1_index, slave2_index);
+	if (!msg)
+		return -1;
+	ret = nl_send_auto(sk, msg);
+	if (ret < 0) {
+		nl_perror(ret, "nl_send_auto");
+		return -1;
+	}
+	nlmsg_free(msg);
 }
 
 struct nl_msg *build_msg(int slave1_index, int slave2_index)
@@ -60,11 +85,18 @@ struct nl_msg *build_msg(int slave1_index, int slave2_index)
 	struct nlattr *info;
 	struct ifinfomsg ifi = {
 		.ifi_family = AF_UNSPEC,
-		.ifi_index = 0,
+		.ifi_index = 0,		/* automatically assign ifindex */
 	};
+	struct attrs {
+		struct nlattr	slave1_attr;	/* IFLA_PRP_SLAVE1 */
+		int		slave1_index;	/* data, i.e, interface index */
+		struct nlattr	slave2_attr;	/* IFLA_PRP_SLAVE2 */
+		int		slave2_index;	/* data, i.e, interface index */
+	} __attribute__((packed)) attrs;
 
 	if (!(msg = nlmsg_alloc_simple(RTM_NEWLINK, NLM_F_EXCL|NLM_F_CREATE)))
 		return NULL;
+	// nlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, RTM_NEWLINK, 8, NLM_F_EXCL|NLM_F_CREATE);
 	if (nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO) < 0)
 		goto nla_put_failure;
 
@@ -72,15 +104,16 @@ struct nl_msg *build_msg(int slave1_index, int slave2_index)
 	if (!(info = nla_nest_start(msg, IFLA_LINKINFO)))
 		goto nla_put_failure;
 	NLA_PUT_STRING(msg, IFLA_INFO_KIND, "prp");
-	NLA_PUT_U32(msg, IFLA_PRP_SLAVE1, slave1_index);
-	NLA_PUT_U32(msg, IFLA_PRP_SLAVE2, slave2_index);
+	/* Setup attributes */
+	attrs.slave1_attr.nla_len = 8;			/* nlmsghdr(4) + index(4) */
+	attrs.slave1_attr.nla_type = IFLA_PRP_SLAVE1;
+	attrs.slave1_index = slave1_index;
+	attrs.slave2_attr.nla_len = 8;
+	attrs.slave2_attr.nla_type = IFLA_PRP_SLAVE2;
+	attrs.slave2_index = slave2_index;
+	nla_put(msg, IFLA_INFO_DATA, sizeof(attrs), &attrs);
 	/* Finish nesting link info and close container */
 	nla_nest_end(msg, info);
-
-	// if (!(info = nla_nest_start(msg, IFLA_INFO_DATA)))
-	// 	goto nla_put_failure;
-	// "\x08\x00\x01\x00\x03\x00\x00\x00\x08\x00\x02\x00\x02\x00\x00\x00"
-	// nla_nest_end(msg, info);
 
 	return msg;
 
