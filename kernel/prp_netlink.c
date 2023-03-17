@@ -13,6 +13,10 @@ static const struct nla_policy prp_policy[IFLA_PRP_MAX + 1] = {
 	[IFLA_PRP_SUPADDR]	= { .len = ETH_ALEN },
 };
 
+/* net_device has already been allocated for us with the priv size we specified
+ * in the rtnl_link_ops structure. The .setup function has also been called for
+ * us. :)
+ */
 static int prp_newlink(struct net *src_net, struct net_device *dev,
 			struct nlattr *tb[], struct nlattr *data[],
 			struct netlink_ext_ack *extack)
@@ -62,12 +66,18 @@ static void prp_dellink(struct net_device *dev, struct list_head *head)
 
 static struct rtnl_link_ops prp_link_ops __read_mostly = {
 	.kind		= "prp",
+	/* Highest device specific netlink attribute number */
 	.maxtype	= IFLA_PRP_MAX,
+	/* Netlink policy for device specific attribute validation */
 	.policy		= prp_policy,
+	/* Size of private data in net_device to be allocated */
 	.priv_size	= sizeof(struct prp_priv),
+	/* net_device setup function */
 	.setup		= prp_dev_setup,
+	/* Function for configuring and registering a new device */
 	.newlink	= prp_newlink,
 	.dellink	= prp_dellink,
+	/* Function to dump device specific netlink attributes */
 	.fill_info	= NULL,
 };
 
