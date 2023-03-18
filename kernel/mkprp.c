@@ -25,19 +25,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	puts("[+] nl setup success");
 
-	/* TODO
-	 * Check argv[1]
-	 * 	if "del"
-	 * 		read argv[2] to get iface name
-	 * 		convert to ifindex using if_nametoindex
-	 *		if (delete_iface(sk, ifindex) < 0)
-	 *			goto fail
-	 *	else if "add"
-	 *		read argv[2] and argv[3] to get slave iface names
-	 *		convert to ifindex
-	 *		if (create_iface(sk, slave1_index, slave2_index) < 0)
-	 *			goto fail
-	 */
 	if (argc == 3) {
 		slave1_index = if_nametoindex(argv[1]);
 		if (!slave1_index)
@@ -51,7 +38,7 @@ int main(int argc, char *argv[])
 		goto fail;
 
 	recv_nlmsgs(sk);	/* TODO: parse and display results */
-
+	return 0;
 fail:
 	if (sk)
 		nl_socket_free(sk);
