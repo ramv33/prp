@@ -83,4 +83,23 @@ void prp_dev_setup(struct net_device *dev)
 	dev->features |= NETIF_F_VLAN_CHALLENGED;
 	PDEBUG("prp_dev_setup done\n");
 }
+
+/* Registers net_device for prp. */
+int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
+{
+	struct prp_priv *prp;
+	int ret = 0;
+
+	PDEBUG("prp_dev_finalize\n");
+	prp = netdev_priv(prp_dev);
+	eth_hw_addr_set(prp_dev, slave[0]->dev_addr);
+	netif_carrier_off(prp_dev);
+	ret = register_netdevice(prp_dev);
+	if (!ret)
+		PDEBUG("registered successfully\n");
+	else
+		PDEBUG("registration failed\n");
+	/* TODO: set slave in prp_priv */
+
+	return ret;
 }
