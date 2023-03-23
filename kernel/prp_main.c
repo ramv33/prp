@@ -10,33 +10,34 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	/* Check if it is our device, i.e, PRP virtual interface */
-	PDEBUG("%s: ", dev->name);
+	char *name = dev->name;
 	switch (event) {
 	case NETDEV_UP:
 		PDEBUG("up\n");
+		PDEBUG("%s: up\n", name);
 		break;
 	case NETDEV_DOWN:
-		PDEBUG("down\n");
+		PDEBUG("%s: down\n", name);
 		break;
 	case NETDEV_CHANGEADDR:
-		PDEBUG("change addr\n");
+		PDEBUG("%s: change addr\n", name);
 		break;
 	case NETDEV_CHANGENAME:
-		PDEBUG("change name\n");
+		PDEBUG("%s: change name\n", name);
 		break;
 	case NETDEV_CHANGEMTU:
 		/* assert (MTU <= min(MTU of slaves) - RCT length) */
-		PDEBUG("change mtu\n");
+		PDEBUG("%s: change mtu\n", name);
 		break;
 	case NETDEV_UNREGISTER:
-		PDEBUG("unregister\n");
+		PDEBUG("%s: unregister\n", name);
 		break;
 	case NETDEV_PRE_TYPE_CHANGE:
 		/* PRP only for Ethernet devices, return error */
-		PDEBUG("change type\n");
+		PDEBUG("%s: change type\n", name);
 		break;
 	case NETDEV_REGISTER:
-		PDEBUG("register\n");
+		PDEBUG("%s: register\n", name);
 		break;
 	}
 	return NOTIFY_OK;
