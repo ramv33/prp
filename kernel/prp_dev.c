@@ -18,7 +18,10 @@ static int prp_dev_change_mtu(struct net_device *net, int mtu)
 /* Called when network device transitions to the UP state */
 static int prp_dev_open(struct net_device *dev)
 {
-	/* TODO */
+	/*
+	 * TODO:
+	 * Check if both slaves up
+	 */
 	PDEBUG("[PRP] prp_dev_open\n");
 	return 0;
 }
