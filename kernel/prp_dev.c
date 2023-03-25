@@ -22,7 +22,7 @@ static int prp_dev_open(struct net_device *dev)
 	 * TODO:
 	 * Check if both slaves up
 	 */
-	PDEBUG("[PRP] prp_dev_open\n");
+	PDEBUG("prp_dev_open\n");
 	return 0;
 }
 
