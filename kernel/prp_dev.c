@@ -65,13 +65,18 @@ static const struct net_device_ops prp_device_ops = {
 	// .ndo_fix_features = prp_fix_features,
 };
 
+static const struct header_ops prp_header_ops = {
+	.create	= eth_header,
+	.parse	= eth_header_parse,
+};
+
 /* Called from rtnl_link_ops. */
 void prp_dev_setup(struct net_device *dev)
 {
 	eth_hw_addr_random(dev);
 	ether_setup(dev);
 	dev->min_mtu = 0;
-	// dev->header_ops = NULL;
+	dev->header_ops = &prp_header_ops;
 	dev->netdev_ops = &prp_device_ops;
 
 	SET_NETDEV_DEVTYPE(dev, &prp_type);
