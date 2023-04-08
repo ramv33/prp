@@ -1,6 +1,8 @@
 #ifndef PRP_MAIN_H
 #define PRP_MAIN_H
 
+#define NODETABLE_SIZE	256
+
 /**
  * PRP Redundancy Control Trailer (RCT) as specified in IEC 62439-3:2016 (p. 20)
  * Appended to frames.
@@ -24,11 +26,24 @@ struct prp_port {
 	u8			lan;		/* LAN_A (0xA) or LAN_B (0xB) */
 };
 
+/**
+ * PRP net_device.priv structure
+ * 
+ * @ports:		Slave devices
+ * @node_table:		Node table (TODO)
+ * @sup_seqnr:		Sequence number for supervision frames
+ * @sup_multicast_addr:	Multicast address to which supervision frames are sent
+ * @dev_stats:		Device statistics
+ * @node_tbl_root:	sysfs entry for displaying nodes table
+ */
 struct prp_priv {
-	struct prp_port	ports[2];
-	u16		sup_seqnr;
-	unsigned char	sup_multicast_addr[ETH_ALEN] __aligned(sizeof(u16));
-	struct dentry	*node_tbl_root;
+	struct prp_port			ports[2];
+	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
+	u16				sup_seqnr;
+	spinlock_t			sup_seqnr_lock;
+	unsigned char			sup_multicast_addr[ETH_ALEN] __aligned(sizeof(u16));
+	struct rtnl_link_stats64	*dev_stats;
+	struct dentry			*node_tbl_root;
 };
 
 #endif /* PRP_MAIN_H */
