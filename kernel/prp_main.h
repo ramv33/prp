@@ -4,7 +4,7 @@
 struct prp_port {
 	struct net_device	*dev;
 	struct prp_priv		*master;
-	char			lan;		/* LAN_A ('A') or LAN_B ('B') */
+	u8			lan;		/* LAN_A (0xA) or LAN_B (0xB) */
 };
 
 struct prp_priv {
