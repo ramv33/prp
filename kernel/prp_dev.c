@@ -92,6 +92,20 @@ void prp_dev_setup(struct net_device *dev)
 	PDEBUG("prp_dev_setup done\n");
 }
 
+/**
+ * Get minimum MTU of the slaves to set for master
+ */
+int prp_get_max_mtu(struct net_device *slave[2])
+{
+	int mtu_max;
+
+	mtu_max = min(slave[0]->mtu, slave[1]->mtu);
+	/* Subtract for RCT */
+	if (mtu_max < PRP_RCTLEN)
+		return 0;
+	return mtu_max - PRP_RCTLEN;
+}
+
 /* Registers net_device for prp. */
 int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 {

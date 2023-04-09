@@ -3,6 +3,8 @@
 
 #define NODETABLE_SIZE	256
 
+#define PRP_RCTLEN	6
+
 /**
  * PRP Redundancy Control Trailer (RCT) as specified in IEC 62439-3:2016 (p. 20)
  * Appended to frames.
@@ -25,6 +27,7 @@ struct prp_port {
 	struct prp_priv		*master;
 	u8			lan;		/* LAN_A (0xA) or LAN_B (0xB) */
 };
+
 
 /**
  * PRP net_device.priv structure
