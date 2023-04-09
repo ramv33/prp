@@ -24,14 +24,20 @@ static int prp_dev_change_mtu(struct net_device *net, int mtu)
 	return 0;
 }
 
-/* Called when network device transitions to the UP state */
+/**
+ * Called when network device transitions to the UP state.
+ * Check if both slave devices are up - warn if not
+ */
 static int prp_dev_open(struct net_device *dev)
 {
-	/*
-	 * TODO:
-	 * Check if both slaves up
-	 */
+	struct prp_priv *prp = netdev_priv(dev);
+
 	PDEBUG("prp_dev_open\n");
+	if (!is_up(prp->ports[0].dev))
+		netdev_warn(dev, "Slave A is not up\n");
+	if (!is_up(prp->ports[1].dev))
+		netdev_warn(dev, "Slave B is not up\n");
+
 	return 0;
 }
 
