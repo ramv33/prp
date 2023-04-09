@@ -17,10 +17,36 @@ static struct device_type prp_type = {
 	.name = "prp"
 };
 
-static int prp_dev_change_mtu(struct net_device *net, int mtu)
+/**
+ * Get minimum MTU of the slaves to set for master
+ */
+int prp_get_max_mtu(struct prp_port ports[2])
+{
+	int mtu_max;
+
+	mtu_max = min(ports[0].dev->mtu, ports[1].dev->mtu);
+	/* Subtract for RCT */
+	if (mtu_max < PRP_RCTLEN)
+		return 0;
+	return mtu_max - PRP_RCTLEN;
+}
+
+static int prp_dev_change_mtu(struct net_device *dev, int mtu)
 {
 	/* TODO: Ensure it does not exceed max MTU of either slave */
+	struct prp_priv *prp;
+	int max_mtu;
+
 	PDEBUG("[PRP] prp_dev_change_mtu to %d\n", mtu);
+	prp = netdev_priv(dev);
+	max_mtu = prp_get_max_mtu(prp->ports);
+	if (mtu > max_mtu) {
+		netdev_info(dev, "MTU must be <= (min(slaves' mtu) - PRP_RCTLEN(6))\n"
+				"For this device, it is %d octets\n", max_mtu);
+		return -EINVAL;
+	}
+	dev->mtu = mtu;
+
 	return 0;
 }
 
@@ -119,20 +145,6 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *slave[2])
 	return 0;
 }
 
-/**
- * Get minimum MTU of the slaves to set for master
- */
-int prp_get_max_mtu(struct net_device *slave[2])
-{
-	int mtu_max;
-
-	mtu_max = min(slave[0]->mtu, slave[1]->mtu);
-	/* Subtract for RCT */
-	if (mtu_max < PRP_RCTLEN)
-		return 0;
-	return mtu_max - PRP_RCTLEN;
-}
-
 /* Registers net_device for prp. */
 int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 {
@@ -152,7 +164,7 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 	/* Set slaves */
 	prp_add_ports(prp, slave);
 
-	dev_set_mtu(prp_dev, prp_get_max_mtu(slave));
+	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
 
 	netif_carrier_off(prp_dev);
 	ret = register_netdevice(prp_dev);
