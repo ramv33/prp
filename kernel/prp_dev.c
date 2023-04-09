@@ -4,6 +4,15 @@
 #include "prp_dev.h"
 #include "debug.h"
 
+unsigned char prp_def_multicast_addr[ETH_ALEN] __aligned(2) = {
+	0x01, 0x15, 0x4e, 0x00, 0x01, 0x00
+};
+
+static bool is_up(struct net_device *dev)
+{
+	return dev && (dev->flags && IFF_UP) && netif_oper_up(dev);
+}
+
 static struct device_type prp_type = {
 	.name = "prp"
 };
@@ -92,6 +101,18 @@ void prp_dev_setup(struct net_device *dev)
 	PDEBUG("prp_dev_setup done\n");
 }
 
+int prp_add_ports(struct prp_priv *prp, struct net_device *slave[2])
+{
+	PDEBUG("Adding the ports");
+	prp->ports[0].dev = slave[0];
+	prp->ports[0].master = prp;
+	prp->ports[0].lan = 0xA;
+	prp->ports[1].dev = slave[1];
+	prp->ports[1].master = prp;
+	prp->ports[1].lan = 0xB;
+	return 0;
+}
+
 /**
  * Get minimum MTU of the slaves to set for master
  */
@@ -115,13 +136,24 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 	PDEBUG("prp_dev_finalize\n");
 	prp = netdev_priv(prp_dev);
 	eth_hw_addr_set(prp_dev, slave[0]->dev_addr);
+
+	spin_lock_init(&prp->sup_seqnr_lock);
+	prp->sup_seqnr = 0;
+
+	/* May need to provide parameter for last byte of mcast addr */
+	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
+
+	/* Set slaves */
+	prp_add_ports(prp, slave);
+
+	dev_set_mtu(prp_dev, prp_get_max_mtu(slave));
+
 	netif_carrier_off(prp_dev);
 	ret = register_netdevice(prp_dev);
 	if (!ret)
 		PDEBUG("registered successfully\n");
 	else
 		PDEBUG("registration failed\n");
-	/* TODO: set slave in prp_priv */
 
 	return ret;
 }
