@@ -141,14 +141,15 @@ void prp_dev_setup(struct net_device *dev)
 	PDEBUG("prp_dev_setup done\n");
 }
 
-int prp_add_ports(struct prp_priv *prp, struct net_device *slave[2])
+int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
+		  struct net_device *slave[2])
 {
 	PDEBUG("Adding the ports");
 	prp->ports[0].dev = slave[0];
-	prp->ports[0].master = prp;
+	prp->ports[0].master = prp_dev;
 	prp->ports[0].lan = 0xA;
 	prp->ports[1].dev = slave[1];
-	prp->ports[1].master = prp;
+	prp->ports[1].master = prp_dev;
 	prp->ports[1].lan = 0xB;
 	return 0;
 }
@@ -170,7 +171,7 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
 
 	/* Set slaves */
-	prp_add_ports(prp, slave);
+	prp_add_ports(prp, prp_dev, slave);
 
 	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
 

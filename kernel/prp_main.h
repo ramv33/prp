@@ -24,7 +24,7 @@ struct prp_rct {
 
 struct prp_port {
 	struct net_device	*dev;
-	struct prp_priv		*master;
+	struct net_device	*master;
 	u8			lan;		/* LAN_A (0xA) or LAN_B (0xB) */
 };
 
