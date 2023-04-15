@@ -1,5 +1,6 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
 #include "debug.h"
@@ -92,7 +93,7 @@ static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 	 * TODO:
 	 * 	Call another function that adds the RCT and forwards
 	 */
-	PDEBUG("[PRP] prp_dev_xmit\n");
+	PDEBUG("prp_dev_xmit by PID=%d\n", current->pid);
 	return NETDEV_TX_OK;
 }
 
