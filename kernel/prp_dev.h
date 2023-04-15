@@ -3,6 +3,8 @@
 
 #include <linux/netdevice.h>
 
+bool is_prp_master(struct net_device *dev);
+
 /* Called from rtnl_link_ops on setup */
 void prp_dev_setup(struct net_device *dev);
 

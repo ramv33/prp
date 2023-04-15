@@ -18,6 +18,14 @@ static struct device_type prp_type = {
 };
 
 /**
+ * Return true if dev is PRP interface
+ */
+bool is_prp_master(struct net_device *dev)
+{
+	return dev->netdev_ops->ndo_start_xmit == prp_dev_xmit;
+}
+
+/**
  * Get minimum MTU of the slaves to set for master
  */
 int prp_get_max_mtu(struct prp_port ports[2])
