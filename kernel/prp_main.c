@@ -36,7 +36,7 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 	case NETDEV_PRE_TYPE_CHANGE:
 		/* PRP only for Ethernet devices, return error */
 		PDEBUG("%s: change type\n", name);
-		break;
+		return NOTIFY_BAD;
 	case NETDEV_REGISTER:
 		PDEBUG("%s: register\n", name);
 		break;
