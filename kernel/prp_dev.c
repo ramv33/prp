@@ -5,6 +5,11 @@
 #include "prp_dev.h"
 #include "debug.h"
 
+static int prp_dev_open(struct net_device *dev);
+static int prp_dev_change_mtu(struct net_device *dev, int mtu);
+static int prp_dev_close(struct net_device *dev);
+static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev);
+
 unsigned char prp_def_multicast_addr[ETH_ALEN] __aligned(2) = {
 	0x01, 0x15, 0x4e, 0x00, 0x01, 0x00
 };
@@ -184,4 +189,35 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 		PDEBUG("registration failed\n");
 
 	return ret;
+}
+
+static void prp_set_operstate(struct net_device *dev, int state)
+{
+	if (dev->operstate == state)
+		return;
+	write_lock(&dev_base_lock);
+	dev->operstate = state;
+	write_unlock(&dev_base_lock);
+	netdev_state_change(dev);
+}
+
+void prp_check_carrier_and_operstate(struct net_device *prp_dev)
+{
+	struct prp_priv *prp = netdev_priv(prp_dev);
+	struct prp_port *ports = prp->ports;
+
+	/* netif_carrier_on if atleast one slave is up */
+	if (is_up(ports[0].dev) || is_up(ports[1].dev)) {
+		netif_carrier_on(prp_dev);
+		if (prp_dev->flags && IFF_UP)
+			prp_set_operstate(prp_dev, IF_OPER_UP);
+		else
+			prp_set_operstate(prp_dev, IF_OPER_DOWN);
+	} else {
+		netif_carrier_off(prp_dev);
+		if (prp_dev->flags && IFF_UP)
+			prp_set_operstate(prp_dev, IF_OPER_LOWERLAYERDOWN);
+		else
+			prp_set_operstate(prp_dev, IF_OPER_DOWN);
+	}
 }

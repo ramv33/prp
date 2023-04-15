@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/netdevice.h>
 #include "prp_main.h"
+#include "prp_dev.h"
 #include "prp_netlink.h"
 #include "debug.h"
 
@@ -15,10 +16,9 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 		return NOTIFY_DONE;
 	switch (event) {
 	case NETDEV_UP:
-		PDEBUG("%s: up\n", name);
-		break;
 	case NETDEV_DOWN:
-		PDEBUG("%s: down\n", name);
+	case NETDEV_CHANGE:
+		prp_check_carrier_and_operstate(dev);
 		break;
 	case NETDEV_CHANGEADDR:
 		PDEBUG("%s: change addr\n", name);
