@@ -4,6 +4,7 @@
 #define NODETABLE_SIZE	256
 
 #define PRP_RCTLEN	6
+#define PRP_SUFFIX	0x88fb
 
 /**
  * PRP Redundancy Control Trailer (RCT) as specified in IEC 62439-3:2016 (p. 20)
@@ -13,6 +14,7 @@
  * @lan_id_and_lsdu_size:	4-bit LAN ID and 12-bit frame size
  * 				LSDU size is the size of the Ethernet payload
  * 				including the RCT, upto and excluding the FCS
+ * 				LSDU size is the least 12 bits (AND with 0x0fff)
  * @prp_suffix:			16-bit PRP suffix (0x88FB)
  */
 struct prp_rct {
@@ -48,5 +50,31 @@ struct prp_priv {
 	struct rtnl_link_stats64	*dev_stats;
 	struct dentry			*node_tbl_root;
 };
+
+
+/**
+ * RX, TX
+ *
+ * Get PRP RCT from the tail of skb and return IF valid PRP suffix,
+ * else return NULL.
+ */
+static inline struct prp_rct *prp_get_rct(struct sk_buff *skb)
+{
+	unsigned char *tail = skb_tail_pointer(skb) - PRP_RCTLEN;
+	struct prp_rct *rct = (struct prp_rct *)tail;
+
+	if (rct->prp_suffix == htons(ETH_P_PRP))
+		return rct;
+	return NULL;
+}
+
+/**
+ * RX
+ */
+static inline int prp_get_lsdu_size(struct prp_rct *rct)
+{
+	return ntohs(rct->lan_id_and_lsdu_size) & 0x0fff;
+
+}
 
 #endif /* PRP_MAIN_H */

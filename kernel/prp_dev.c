@@ -3,6 +3,7 @@
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
+#include "prp_tx.h"
 #include "debug.h"
 
 static int prp_dev_open(struct net_device *dev);
@@ -94,11 +95,13 @@ static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_dev *prp = netdev_priv(dev);
 
-	/*
-	 * TODO:
-	 * 	Call another function that adds the RCT and forwards
-	 */
 	PDEBUG("prp_dev_xmit by PID=%d\n", current->pid);
+	skb->dev = dev;
+	/* Forward to be sent through both slave devices */
+	skb_reset_mac_header(skb);
+	skb_reset_mac_len(skb);
+	prp_send_skb(skb, dev);
+	kfree_skb(skb);
 	return NETDEV_TX_OK;
 }
 

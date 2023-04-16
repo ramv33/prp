@@ -6,7 +6,7 @@ KVERSION = $(shell uname -r)
 
 obj-m += prp.o
 
-prp-objs += prp_main.o prp_netlink.o prp_dev.o
+prp-objs += prp_main.o prp_netlink.o prp_dev.o prp_tx.o prp_rx.o
 
 all:
 	make -C /lib/modules/$(KVERSION)/build M=$(PWD) modules

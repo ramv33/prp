@@ -12,7 +12,7 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	/* Check if it is our device, i.e, PRP virtual interface */
 	char *name = dev->name;
-	if (name[0] != 'p' || name[1] != 'r' || name[2] != 'p')
+	if (!is_prp_master(dev))
 		return NOTIFY_DONE;
 	switch (event) {
 	case NETDEV_UP:
