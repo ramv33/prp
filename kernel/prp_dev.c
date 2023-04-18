@@ -218,7 +218,7 @@ void prp_check_carrier_and_operstate(struct net_device *prp_dev)
 			prp_set_operstate(prp_dev, IF_OPER_DOWN);
 	} else {
 		netif_carrier_off(prp_dev);
-		if (prp_dev->flags && IFF_UP)
+		if (prp_dev->flags && IFF_UP)	/* only slave ("lower layer") is down */
 			prp_set_operstate(prp_dev, IF_OPER_LOWERLAYERDOWN);
 		else
 			prp_set_operstate(prp_dev, IF_OPER_DOWN);
