@@ -101,16 +101,16 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		return;
 	for (int i = 0; i < 2; ++i) {
 		/* maybe try incrementing refcount instead */
-		struct sk_buff *skb_c = skb_clone(skb, GFP_ATOMIC);
-		if (!skb_c) {
+		struct sk_buff *clone_skb = skb_clone(skb, GFP_ATOMIC);
+		if (!clone_skb) {
 			PDEBUG("skb_clone returned NULL... continuing");
 			continue;
 		}
-		skb_c->dev = ports[i].dev;
-		rct = prp_get_rct(skb_c);
+		clone_skb->dev = ports[i].dev;
+		rct = prp_get_rct(clone_skb);
 		prp_rct_set_lan_id(rct, ports[i].lan);
-		PDEBUG("sending over port %x: %s", ports[i].lan, skb_c->dev->name);
-		// if (!dev_queue_xmit(skb))
-		// 	netdev_warn(dev, "failed to send over port %x", ports[i].lan);
+		PDEBUG("sending over port %x: %s", ports[i].lan, clone_skb->dev->name);
+		if (dev_queue_xmit(clone_skb))
+			netdev_warn(dev, "failed to send over port %x", ports[i].lan);
 	}
 }
