@@ -40,9 +40,17 @@ inline void prp_add_rct(struct sk_buff *skb)
 {
 	struct prp_rct *rct;
 
+	PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
+			skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	rct = skb_put(skb, PRP_RCTLEN);
+	PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
+			skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	prp_set_lsdu_size(skb, rct);
 	rct->prp_suffix = ntohs(PRP_SUFFIX);
+	// PDEBUG("last 6 bytes of skb");
+	// char *tail = (char *)rct + 5;
+	// for (char *p = (char *)rct; p <= tail; p++)
+	// 	PDEBUG("\t%02hhx", *p);
 	PDEBUG("prp_add_rct done");
 }
 
@@ -58,7 +66,7 @@ static int prp_prepare_skb(struct sk_buff *skb, struct net_device *dev)
 	PDEBUG("prp_prepare_skb");
 	/* Check if skb contains ethhdr */
 	if (skb->mac_len < sizeof(struct ethhdr)) {
-		PDEBUG("prp_prepare_skb failed");
+		PDEBUG("prp_prepare_skb failed, skb does not contain ethhdr");
 		return -EINVAL;
 	}
 
@@ -87,11 +95,17 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	PDEBUG("prp_send_skb");
 	if (prp_prepare_skb(skb, dev) < 0)
 		return;
-	rct = prp_get_rct(skb);
 	for (int i = 0; i < 2; ++i) {
-		skb->dev = ports[i].dev;
+		/* maybe try incrementing refcount instead */
+		struct sk_buff *skb_c = skb_clone(skb, GFP_ATOMIC);
+		if (!skb_c) {
+			PDEBUG("skb_clone returned NULL... continuing");
+			continue;
+		}
+		skb_c->dev = ports[i].dev;
+		rct = prp_get_rct(skb_c);
 		prp_rct_set_lan_id(rct, ports[i].lan);
-		PDEBUG("sending over port %x: %s", ports[i].lan, skb->dev->name);
+		PDEBUG("sending over port %x: %s", ports[i].lan, skb_c->dev->name);
 		// if (!dev_queue_xmit(skb))
 		// 	netdev_warn(dev, "failed to send over port %x", ports[i].lan);
 	}

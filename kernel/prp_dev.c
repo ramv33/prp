@@ -96,12 +96,12 @@ static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct prp_dev *prp = netdev_priv(dev);
 
 	PDEBUG("prp_dev_xmit by PID=%d\n", current->pid);
-	skb->dev = dev;
-	/* Forward to be sent through both slave devices */
+	ether_addr_copy(
 	skb_reset_mac_header(skb);
 	skb_reset_mac_len(skb);
+	/* Forward to be sent through both slave devices */
 	prp_send_skb(skb, dev);
-	kfree_skb(skb);
+
 	return NETDEV_TX_OK;
 }
 
@@ -138,6 +138,8 @@ void prp_dev_setup(struct net_device *dev)
 	dev->netdev_ops = &prp_device_ops;
 
 	SET_NETDEV_DEVTYPE(dev, &prp_type);
+	dev->priv_flags |= IFF_NO_QUEUE | IFF_DISABLE_NETPOLL;
+	dev->needs_free_netdev = true;		/* unregister should perform free_netdev */
 	dev->hw_features = NETIF_F_SG		/* Scatter/gather IO */
 			| NETIF_F_FRAGLIST 	/* Scatter/gather IO */
 			| NETIF_F_HIGHDMA	/* Can DMA to high memory */
@@ -145,8 +147,13 @@ void prp_dev_setup(struct net_device *dev)
 			| NETIF_F_HW_CSUM 	/* Can checksum all packets */
 			;
 	dev->features = dev->hw_features;
+	/* prevent recursive tx locking? */
+	dev->features |= NETIF_F_LLTX;
 	/* cannot handle VLAN */
 	dev->features |= NETIF_F_VLAN_CHALLENGED;
+	/* "Does not change network namespaces" */
+	dev->features |= NETIF_F_NETNS_LOCAL;
+
 	PDEBUG("prp_dev_setup done\n");
 }
 
@@ -166,11 +173,11 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 /* Registers net_device for prp. */
 int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 {
-	struct prp_priv *prp;
+	struct prp_priv *prp = netdev_priv(prp_dev);
 	int ret = 0;
 
 	PDEBUG("prp_dev_finalize\n");
-	prp = netdev_priv(prp_dev);
+	/* set hwaddr to be that of first slave's */
 	eth_hw_addr_set(prp_dev, slave[0]->dev_addr);
 
 	spin_lock_init(&prp->sup_seqnr_lock);
@@ -184,7 +191,12 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 
 	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
 
-	netif_carrier_off(prp_dev);
+	/* TODO:
+	 * 	Set timers for supervision and prune
+	 * 	Set up node table
+	 * 	Set up sysfs entry for node table
+	 */
+	netif_carrier_off(prp_dev);		// why?
 	ret = register_netdevice(prp_dev);
 	if (!ret)
 		PDEBUG("registered successfully\n");
