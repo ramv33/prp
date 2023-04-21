@@ -12,11 +12,15 @@
  */
 static inline void prp_set_lsdu_size(struct prp_rct *rct, struct sk_buff *skb)
 {
-	u16 lsdu_size = skb->mac_len - 14;
+	u16 lsdu_size = skb->len - skb->mac_len;
 	u16 temp = rct->lan_id_and_lsdu_size;
 
-	rct->lan_id_and_lsdu_size = ntohs((htons(temp) & 0xf000)
+	PDEBUG("prp_set_lsdu_size: lsdu_size=%d, skb->mac_len=%d", lsdu_size,
+			skb->mac_len);
+	rct->lan_id_and_lsdu_size = htons((ntohs(temp) & 0xf000)
 					  | (lsdu_size & 0x0fff));
+	PDEBUG("prp_set_lsdu_size: rct->lan_id_and_lsdu_size=%d",
+		htons(rct->lan_id_and_lsdu_size));
 }
 
 /**
@@ -27,8 +31,8 @@ static inline void prp_set_lsdu_size(struct prp_rct *rct, struct sk_buff *skb)
  */
 static inline void prp_rct_set_lan_id(struct prp_rct *rct, u8 lan_id)
 {
-	rct->lan_id_and_lsdu_size &= 0x0fff;
-	rct->lan_id_and_lsdu_size |= lan_id << 12;
+	rct->lan_id_and_lsdu_size &= htons(0x0fff);
+	rct->lan_id_and_lsdu_size |= htons(lan_id << 12);
 }
 
 
