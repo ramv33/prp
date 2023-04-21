@@ -45,7 +45,7 @@ inline void prp_add_rct(struct sk_buff *skb)
 	rct = skb_put(skb, PRP_RCTLEN);
 	PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
 			skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
-	prp_set_lsdu_size(skb, rct);
+	prp_set_lsdu_size(rct, skb);
 	rct->prp_suffix = htons(PRP_SUFFIX);
 	// PDEBUG("last 6 bytes of skb");
 	// char *tail = (char *)rct + 5;
