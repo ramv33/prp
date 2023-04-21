@@ -10,7 +10,7 @@
 /**
  * TX
  */
-static inline void prp_set_lsdu_size(struct sk_buff *skb, struct prp_rct *rct)
+static inline void prp_set_lsdu_size(struct prp_rct *rct, struct sk_buff *skb)
 {
 	u16 lsdu_size = skb->mac_len - 14;
 	u16 temp = rct->lan_id_and_lsdu_size;
