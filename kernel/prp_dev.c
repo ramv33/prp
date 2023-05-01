@@ -161,8 +161,14 @@ void prp_dev_setup(struct net_device *dev)
 	PDEBUG("prp_dev_setup done\n");
 }
 
+/**
+ * prp_add_ports - Add the 2 slave devices to prp_priv
+ * @prp: PRP device's private structure
+ * @prp_dev: PRP device
+ * @slave: Array of pointers to the 2 slave devices
+ */
 int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
-		  struct net_device *slave[2])
+		  struct net_device *slave[2], struct netlink_ext_ack *extack)
 {
 	PDEBUG("Adding the ports");
 	prp->ports[0].dev = slave[0];
@@ -171,11 +177,14 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 	prp->ports[1].dev = slave[1];
 	prp->ports[1].master = prp_dev;
 	prp->ports[1].lan = 0xB;
+	/* TODO: set rx_handler for slaves = prp_recv_frame - see hsr_portdev_setup */
+	// prp_port_setup();
 	return 0;
 }
 
 /* Registers net_device for prp. */
-int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
+int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
+		     struct netlink_ext_ack *extack)
 {
 	struct prp_priv *prp = netdev_priv(prp_dev);
 	int ret = 0;
@@ -191,7 +200,7 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2])
 	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
 
 	/* Set slaves */
-	prp_add_ports(prp, prp_dev, slave);
+	prp_add_ports(prp, prp_dev, slave, extack);
 
 	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
 

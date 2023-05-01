@@ -55,7 +55,7 @@ static int prp_newlink(struct net *src_net, struct net_device *dev,
 	}
 	PDEBUG("Slave 2 verified");
 
-	return prp_dev_finalize(dev, slave);
+	return prp_dev_finalize(dev, slave, extack);
 }
 
 static void prp_dellink(struct net_device *dev, struct list_head *head)
