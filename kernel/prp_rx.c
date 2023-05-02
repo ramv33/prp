@@ -19,3 +19,31 @@ static inline bool prp_check_lsdu_size(struct sk_buff *skb, struct prp_rct *rct)
 	expected_lsdu_size = skb->len - 14;
 	return expected_lsdu_size == prp_get_lsdu_size(rct);
 }
+
+/**
+ *
+ */
+rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
+{
+	struct sk_buff *skb = *pskb;
+	struct ethhdr *ethhdr;
+
+	PDEBUG("%s: PID=%d", __func__, current->pid);
+
+	/* Packets from dev_loopback_xmit() do not have L2 header, bail out */
+	if (unlikely(skb->pkt_type == PACKET_LOOPBACK))
+		return RX_HANDLER_PASS;
+
+	if (!skb_mac_header_was_set(skb)) {
+		WARN_ONCE(1, "%s: skb invalid", __func__);
+	}
+
+	ethhdr = eth_hdr(skb);
+	if (!ethhdr) {
+		PDEBUG("%s: eth_hdr() return NULL", __func__);
+		return RX_HANDLER_PASS;
+	}
+	PDEBUG("%s: eth_hdr->proto = 0x%x", __func__, ntohs(ethhdr->h_proto));
+
+	return RX_HANDLER_PASS;
+}

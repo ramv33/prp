@@ -4,6 +4,7 @@
 #include "prp_main.h"
 #include "prp_dev.h"
 #include "prp_tx.h"
+#include "prp_rx.h"
 #include "debug.h"
 
 static int prp_dev_open(struct net_device *dev);
@@ -162,7 +163,47 @@ void prp_dev_setup(struct net_device *dev)
 }
 
 /**
+ * prp_port_setup - setup the slave devices RX handler.
+ * 	Return 0 on success, non-zero on failure.
+ */
+int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
+		   struct prp_port *port, struct netlink_ext_ack *extack)
+{
+	struct net_device *prp_dev;
+	int res;
+
+	/* why? */
+	res = dev_set_promiscuity(slave, 1);
+	if (res)
+		return res;
+
+	prp_dev = port->master;
+
+	res = netdev_upper_dev_link(slave, prp_dev, extack);
+	if (res)
+		goto fail_upper_dev_link;
+
+	res = netdev_rx_handler_register(slave, prp_recv_frame, port);
+	if (res)
+		goto fail_rx_handler;
+
+	/* why? */
+	dev_disable_lro(slave);
+
+	return 0;
+
+fail_rx_handler:
+	PDEBUG("%s: failed to register rx handler", __func__);
+	netdev_upper_dev_unlink(slave, prp_dev);
+fail_upper_dev_link:
+	PDEBUG("%s: failed to link with upper dev", __func__);
+	dev_set_promiscuity(slave, -1);
+	return res;
+}
+
+/**
  * prp_add_ports - Add the 2 slave devices to prp_priv
+ * 	Returns 0 on success, -1 on failure
  * @prp: PRP device's private structure
  * @prp_dev: PRP device
  * @slave: Array of pointers to the 2 slave devices
@@ -177,9 +218,17 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 	prp->ports[1].dev = slave[1];
 	prp->ports[1].master = prp_dev;
 	prp->ports[1].lan = 0xB;
-	/* TODO: set rx_handler for slaves = prp_recv_frame - see hsr_portdev_setup */
-	// prp_port_setup();
+
+	if (prp_port_setup(prp, slave[0], &prp->ports[0], extack) < 0)
+		goto fail;
+	if (prp_port_setup(prp, slave[1], &prp->ports[1], extack) < 0)
+		goto fail;
+
 	return 0;
+fail:
+	PDEBUG("%s: failed to setup port", __func__);
+	return -1;
+
 }
 
 /* Registers net_device for prp. */
@@ -200,7 +249,11 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
 
 	/* Set slaves */
-	prp_add_ports(prp, prp_dev, slave, extack);
+	ret = prp_add_ports(prp, prp_dev, slave, extack);
+	if (ret) {
+		PDEBUG("%s: failed to add ports", __func__);
+		return ret;
+	}
 
 	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
 
