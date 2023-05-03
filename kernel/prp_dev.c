@@ -248,11 +248,20 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	/* May need to provide parameter for last byte of mcast addr */
 	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
 
+	/* Register our new device */
+	netif_carrier_off(prp_dev);		// why?
+	ret = register_netdevice(prp_dev);
+	if (ret) {
+		PDEBUG("registration failed\n");
+		return ret;
+	}
+	PDEBUG("registered '%s' successfully\n", prp_dev->name);
+
 	/* Set slaves */
 	ret = prp_add_ports(prp, prp_dev, slave, extack);
 	if (ret) {
 		PDEBUG("%s: failed to add ports", __func__);
-		return ret;
+		goto err_unregister;
 	}
 
 	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
@@ -262,12 +271,11 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	 * 	Set up node table
 	 * 	Set up sysfs entry for node table
 	 */
-	netif_carrier_off(prp_dev);		// why?
-	ret = register_netdevice(prp_dev);
-	if (!ret)
-		PDEBUG("registered successfully\n");
-	else
-		PDEBUG("registration failed\n");
+
+	return 0;
+
+err_unregister:
+	unregister_netdevice(prp_dev);
 
 	return ret;
 }
