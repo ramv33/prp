@@ -60,7 +60,17 @@ static int prp_newlink(struct net *src_net, struct net_device *dev,
 
 static void prp_dellink(struct net_device *dev, struct list_head *head)
 {
+	struct prp_priv *prp = netdev_priv(dev);
+
 	PDEBUG("dellink called");
+	/*
+	 * TODO:
+	 * 	free node table
+	 * 	delete timer for PRUNE and ANNOUNCE
+	 */
+	prp_del_port(&prp->ports[0]);
+	prp_del_port(&prp->ports[1]);
+
 	unregister_netdevice_queue(dev, head);
 }
 

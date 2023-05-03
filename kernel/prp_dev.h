@@ -15,4 +15,7 @@ int prp_dev_finalize(struct net_device *dev, struct net_device *slave[2],
 
 int prp_get_max_mtu(struct prp_port ports[2]);
 
+/* Called from dellink */
+void prp_del_port(struct prp_port *port);
+
 #endif /* __PRP_DEV_H */

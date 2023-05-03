@@ -232,6 +232,18 @@ fail:
 
 }
 
+/**
+ * prp_del_port - unregister rx handler and unlink upper device.
+ */
+void prp_del_port(struct prp_port *port)
+{
+	PDEBUG("%s: dev='%s'", __func__, port->dev->name);
+
+	netdev_rx_handler_unregister(port->dev);
+	dev_set_promiscuity(port->dev, -1);
+	netdev_upper_dev_unlink(port->dev, port->master);
+}
+
 /* Registers net_device for prp. */
 int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 		     struct netlink_ext_ack *extack)
