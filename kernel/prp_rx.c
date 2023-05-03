@@ -26,9 +26,10 @@ static inline bool prp_check_lsdu_size(struct sk_buff *skb, struct prp_rct *rct)
 rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 {
 	struct sk_buff *skb = *pskb;
+	struct net_device *dev = skb->dev;
 	struct ethhdr *ethhdr;
 
-	PDEBUG("%s: PID=%d", __func__, current->pid);
+	PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
 
 	/* Packets from dev_loopback_xmit() do not have L2 header, bail out */
 	if (unlikely(skb->pkt_type == PACKET_LOOPBACK))

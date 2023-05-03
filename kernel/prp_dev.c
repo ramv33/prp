@@ -172,14 +172,15 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	struct net_device *prp_dev;
 	int res;
 
+	PDEBUG("%s: slave='%s'", __func__, slave->name);
 	/* why? */
 	res = dev_set_promiscuity(slave, 1);
 	if (res)
 		return res;
 
 	prp_dev = port->master;
-
 	res = netdev_upper_dev_link(slave, prp_dev, extack);
+	PDEBUG("%s: prp_dev='%s', res=%d", __func__, prp_dev->name, res);
 	if (res)
 		goto fail_upper_dev_link;
 
@@ -211,7 +212,7 @@ fail_upper_dev_link:
 int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 		  struct net_device *slave[2], struct netlink_ext_ack *extack)
 {
-	PDEBUG("Adding the ports");
+	PDEBUG("%s: Adding the ports", __func__);
 	prp->ports[0].dev = slave[0];
 	prp->ports[0].master = prp_dev;
 	prp->ports[0].lan = 0xA;
