@@ -21,6 +21,19 @@ static inline bool prp_check_lsdu_size(struct sk_buff *skb, struct prp_rct *rct)
 }
 
 /**
+ * prp_get_rx_handler_data - Get RCU protected rx_handler_data from slave.
+ * 	Checks is rx_handler for slave is our PRP rx handler (is this necessary?), and
+ *	returns NULL if not, else returns the rx_handler which is the port for the slave.
+ * @dev: Pointer to slave device
+ */
+static inline struct prp_port *prp_get_rx_handler_data(struct net_device *dev)
+{
+	if (rcu_access_pointer(dev->rx_handler) == prp_recv_frame)
+		return rcu_dereference(dev->rx_handler_data);
+	return NULL;
+}
+
+/**
  *
  */
 rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
@@ -28,6 +41,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	struct sk_buff *skb = *pskb;
 	struct net_device *dev = skb->dev;
 	struct ethhdr *ethhdr;
+	struct prp_port *port;
 
 	PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
 
@@ -45,6 +59,8 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		return RX_HANDLER_PASS;
 	}
 	PDEBUG("%s: eth_hdr->proto = 0x%x", __func__, ntohs(ethhdr->h_proto));
+
+	port =  prp_get_rx_handler_data(dev);
 
 	return RX_HANDLER_PASS;
 }
