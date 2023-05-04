@@ -43,7 +43,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	struct ethhdr *ethhdr;
 	struct prp_port *port;
 
-	PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
+	// PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
 
 	/* Not sure why; saw this in the net/hsr module */
 	if (unlikely(skb->pkt_type == PACKET_LOOPBACK))
@@ -58,7 +58,8 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		PDEBUG("%s: eth_hdr() return NULL", __func__);
 		return RX_HANDLER_PASS;
 	}
-	PDEBUG("%s: eth_hdr->proto = 0x%x", __func__, ntohs(ethhdr->h_proto));
+	PDEBUG("%s: dev='%s': PID=%ld: eth_hdr->proto = 0x%x", __func__,
+		current->pid, dev->name, ntohs(ethhdr->h_proto));
 
 	port =  prp_get_rx_handler_data(dev);
 
