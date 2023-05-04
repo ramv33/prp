@@ -31,12 +31,12 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 
 	PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
 
-	/* Packets from dev_loopback_xmit() do not have L2 header, bail out */
+	/* Not sure why; saw this in the net/hsr module */
 	if (unlikely(skb->pkt_type == PACKET_LOOPBACK))
 		return RX_HANDLER_PASS;
 
 	if (!skb_mac_header_was_set(skb)) {
-		WARN_ONCE(1, "%s: skb invalid", __func__);
+		WARN_ONCE(1, "%s: skb invalid: mac header not set", __func__);
 	}
 
 	ethhdr = eth_hdr(skb);

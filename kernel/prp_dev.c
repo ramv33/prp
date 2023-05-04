@@ -163,7 +163,8 @@ void prp_dev_setup(struct net_device *dev)
 }
 
 /**
- * prp_port_setup - setup the slave devices RX handler.
+ * prp_port_setup - setup the slave devices RX handler and upper dev link.
+ * 	Also sets the dev->rx_handler_data to the prp_port
  * 	Return 0 on success, non-zero on failure.
  */
 int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
