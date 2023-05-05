@@ -62,6 +62,9 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		current->pid, dev->name, ntohs(ethhdr->h_proto));
 
 	port =  get_rx_handler_data(dev);
+	if (!port)
+		goto finish_pass;
 
+finish_pass:
 	return RX_HANDLER_PASS;
 }
