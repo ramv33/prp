@@ -65,6 +65,22 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	if (!port)
 		goto finish_pass;
 
+	/* TODO:
+	 * 	Check if valid RCT
+	 * 		If not, forward to upper layer and return
+	 *
+	 * 	Check if SUPERVISION frame
+	 * 		If so, add to node table and return.
+	 *
+	 * 	Check if DUPLICATE frame by checking node table
+	 * 		? Do we add to node table if not present?
+	 * 		? Or can we assume that only nodes from which we
+	 * 		  received SUPERVISION frames are DANPs? I.e, if
+	 * 		  node is not in node table, it is a SANP and so we
+	 * 		  need not check if it is a duplicate.
+	 *
+	 * 	Forward to upper layer
+	 */
 finish_pass:
 	return RX_HANDLER_PASS;
 }
