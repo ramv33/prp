@@ -53,7 +53,6 @@ static int prp_dev_change_mtu(struct net_device *dev, int mtu)
 	struct prp_priv *prp;
 	int max_mtu;
 
-	PDEBUG("[PRP] prp_dev_change_mtu to %d\n", mtu);
 	prp = netdev_priv(dev);
 	max_mtu = prp_get_max_mtu(prp->ports);
 	if (mtu > max_mtu) {
@@ -62,6 +61,7 @@ static int prp_dev_change_mtu(struct net_device *dev, int mtu)
 		return -EINVAL;
 	}
 	dev->mtu = mtu;
+	printk("%s: MTU changed to %d\n", dev->name, mtu);
 
 	return 0;
 }
@@ -74,7 +74,7 @@ static int prp_dev_open(struct net_device *dev)
 {
 	struct prp_priv *prp = netdev_priv(dev);
 
-	PDEBUG("prp_dev_open\n");
+	// PDEBUG("prp_dev_open\n");
 	if (!is_up(prp->ports[0].dev))
 		netdev_warn(dev, "Slave A is not up\n");
 	if (!is_up(prp->ports[1].dev))
@@ -87,7 +87,7 @@ static int prp_dev_open(struct net_device *dev)
 static int prp_dev_close(struct net_device *dev)
 {
 	/* Nothing to do here I think */
-	PDEBUG("[PRP] prp_dev_close\n");
+	// PDEBUG("[PRP] prp_dev_close\n");
 	return 0;
 }
 
@@ -96,7 +96,7 @@ static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_dev *prp = netdev_priv(dev);
 
-	PDEBUG("prp_dev_xmit by PID=%d\n", current->pid);
+	PDEBUG("%s: PID=%d\n", __func__, current->pid);
 
 	skb_reset_mac_header(skb);
 	skb_reset_mac_len(skb);
@@ -159,7 +159,6 @@ void prp_dev_setup(struct net_device *dev)
 	/* "Does not change network namespaces" */
 	dev->features |= NETIF_F_NETNS_LOCAL;
 
-	PDEBUG("prp_dev_setup done\n");
 }
 
 /**
@@ -173,7 +172,6 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	struct net_device *prp_dev;
 	int res;
 
-	PDEBUG("%s: slave='%s'", __func__, slave->name);
 	/* why? */
 	res = dev_set_promiscuity(slave, 1);
 	if (res)
@@ -181,7 +179,6 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 
 	prp_dev = port->master;
 	res = netdev_upper_dev_link(slave, prp_dev, extack);
-	PDEBUG("%s: prp_dev='%s', res=%d", __func__, prp_dev->name, res);
 	if (res)
 		goto fail_upper_dev_link;
 
@@ -195,10 +192,10 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	return 0;
 
 fail_rx_handler:
-	PDEBUG("%s: failed to register rx handler", __func__);
+	printk(KERN_ERR "%s: failed to register rx handler", __func__);
 	netdev_upper_dev_unlink(slave, prp_dev);
 fail_upper_dev_link:
-	PDEBUG("%s: failed to link with upper dev", __func__);
+	PDEBUG(KERN_ERR "%s: failed to link with upper dev", __func__);
 	dev_set_promiscuity(slave, -1);
 	return res;
 }
@@ -213,7 +210,6 @@ fail_upper_dev_link:
 int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 		  struct net_device *slave[2], struct netlink_ext_ack *extack)
 {
-	PDEBUG("%s: Adding the ports", __func__);
 	prp->ports[0].dev = slave[0];
 	prp->ports[0].master = prp_dev;
 	prp->ports[0].lan = 0xA;
@@ -228,7 +224,7 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 
 	return 0;
 fail:
-	PDEBUG("%s: failed to setup port", __func__);
+	printk(KERN_ERR "[prp] %s: failed to setup port", __func__);
 	return -1;
 
 }
@@ -238,7 +234,7 @@ fail:
  */
 void prp_del_port(struct prp_port *port)
 {
-	PDEBUG("%s: dev='%s'", __func__, port->dev->name);
+	// PDEBUG("%s: dev='%s'", __func__, port->dev->name);
 
 	netdev_rx_handler_unregister(port->dev);
 	dev_set_promiscuity(port->dev, -1);
@@ -252,7 +248,6 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	struct prp_priv *prp = netdev_priv(prp_dev);
 	int ret = 0;
 
-	PDEBUG("prp_dev_finalize\n");
 	/* set hwaddr to be that of first slave's */
 	eth_hw_addr_set(prp_dev, slave[0]->dev_addr);
 
@@ -266,7 +261,7 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	netif_carrier_off(prp_dev);		// why?
 	ret = register_netdevice(prp_dev);
 	if (ret) {
-		PDEBUG("registration failed\n");
+		printk("[prp]: %s: registration failed\n", __func__);
 		return ret;
 	}
 	PDEBUG("registered '%s' successfully\n", prp_dev->name);
@@ -274,7 +269,7 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	/* Set slaves */
 	ret = prp_add_ports(prp, prp_dev, slave, extack);
 	if (ret) {
-		PDEBUG("%s: failed to add ports", __func__);
+		printk(KERN_ERR "%s: failed to add ports", __func__);
 		goto err_unregister;
 	}
 

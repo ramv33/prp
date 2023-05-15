@@ -15,12 +15,8 @@ static inline void prp_set_lsdu_size(struct prp_rct *rct, struct sk_buff *skb)
 	u16 lsdu_size = skb->len - skb->mac_len;
 	u16 temp = rct->lan_id_and_lsdu_size;
 
-	PDEBUG("prp_set_lsdu_size: lsdu_size=%d, skb->mac_len=%d", lsdu_size,
-			skb->mac_len);
 	rct->lan_id_and_lsdu_size = htons((ntohs(temp) & 0xf000)
 					  | (lsdu_size & 0x0fff));
-	PDEBUG("prp_set_lsdu_size: rct->lan_id_and_lsdu_size=%d",
-		htons(rct->lan_id_and_lsdu_size));
 }
 
 /**
@@ -44,18 +40,18 @@ inline void prp_add_rct(struct sk_buff *skb)
 {
 	struct prp_rct *rct;
 
-	PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
-			skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
+	// PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
+	// 		skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	rct = skb_put(skb, PRP_RCTLEN);
-	PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
-			skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
+	// PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
+	// 		skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	prp_set_lsdu_size(rct, skb);
 	rct->prp_suffix = htons(PRP_SUFFIX);
 	// PDEBUG("last 6 bytes of skb");
 	// char *tail = (char *)rct + 5;
 	// for (char *p = (char *)rct; p <= tail; p++)
 	// 	PDEBUG("\t%02hhx", *p);
-	PDEBUG("prp_add_rct done");
+	// PDEBUG("prp_add_rct done");
 }
 
 /**
@@ -67,16 +63,14 @@ static int prp_prepare_skb(struct sk_buff *skb, struct net_device *dev)
 	struct ethhdr *ethhdr;
 	unsigned short proto;
 
-	PDEBUG("prp_prepare_skb");
 	/* Check if skb contains ethhdr */
 	if (skb->mac_len < sizeof(struct ethhdr)) {
-		PDEBUG("prp_prepare_skb failed, skb does not contain ethhdr");
+		printk(KERN_ERR "prp_prepare_skb failed, skb does not contain ethhdr");
 		return -EINVAL;
 	}
 
 	ethhdr = (struct ethhdr *)skb_mac_header(skb);
 	proto = ethhdr->h_proto;
-	PDEBUG("proto = %x", ntohs(proto));
 
 	// TODO: Check if skb contains supervision frame
 	// TODO: Check node table for destination frame
@@ -107,14 +101,16 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		/* maybe try incrementing refcount instead */
 		struct sk_buff *clone_skb = skb_clone(skb, GFP_ATOMIC);
 		if (!clone_skb) {
-			PDEBUG("skb_clone returned NULL... continuing");
+			PDEBUG("%s: skb_clone returned NULL... continuing", __func__);
 			continue;
 		}
 		clone_skb->dev = ports[i].dev;
 		rct = prp_get_rct(clone_skb);
 		prp_rct_set_lan_id(rct, ports[i].lan);
-		PDEBUG("sending over port %x: %s", ports[i].lan, clone_skb->dev->name);
 		if (dev_queue_xmit(clone_skb))
 			netdev_warn(dev, "failed to send over port %x", ports[i].lan);
+		else
+			PDEBUG("%s: sent over port %x: %s\n", __func__, ports[i].lan,
+				clone_skb->dev->name);
 	}
 }

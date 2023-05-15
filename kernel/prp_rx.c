@@ -102,8 +102,6 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 	int		len, res;
 
 	skb->dev = dev;
-	PDEBUG("%s: dev='%s' @ %p\n\n", __func__, dev->name, dev);
-	PDEBUG("%s: skb->dev='%s' @ %p\n", __func__, skb->dev->name, skb->dev);
 	clone_skb = skb_clone(skb, GFP_ATOMIC);
 	if (!clone_skb) {
 		PDEBUG("%s: skb_clone returned NULL, not forwarding\n", __func__);
@@ -114,10 +112,10 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 	skb_pull(clone_skb, ETH_HLEN);
 	res = netif_receive_skb(clone_skb);
 	if (res == NET_RX_DROP) {
-		PDEBUG("%s: netif_rx DROPPED\n", __func__);
+		PDEBUG("%s:%s: netif_rx DROPPED\n", __func__, dev->name);
 		/* TODO: Update stats */
 	} else {
-		PDEBUG("%s: netif_rx SUCCESS\n", __func__);
+		PDEBUG("%s:%s: netif_rx SUCCESS\n", __func__, dev->name);
 		/* TODO: Update stats */
 	}
 }

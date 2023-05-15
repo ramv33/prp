@@ -23,37 +23,35 @@ static int prp_newlink(struct net *src_net, struct net_device *dev,
 {
 	struct net_device *slave[2];
 
-	PDEBUG("newlink called\n");
 	if (!data) {
 		NL_SET_ERR_MSG_MOD(extack, "No slave devices specified");
-		PDEBUG("No slave devices specified");
+		printk(KERN_INFO "[prp] No slave devices specified");
 		return -EINVAL;
 	}
 	if (!data[IFLA_PRP_SLAVE1]) {
 		NL_SET_ERR_MSG_MOD(extack, "Slave1 device not specified");
-		PDEBUG("Slave1 not specified");
+		printk(KERN_INFO "[prp] Slave1 not specified");
 		return -EINVAL;
 	}
 	if (!data[IFLA_PRP_SLAVE2]) {
 		NL_SET_ERR_MSG_MOD(extack, "Slave2 device not specified");
-		PDEBUG("Slave2 not specified");
+		printk(KERN_INFO "[prp] Slave2 not specified");
 		return -EINVAL;
 	}
 
 	slave[0] = __dev_get_by_index(src_net, nla_get_u32(data[IFLA_PRP_SLAVE1]));
 	if (!slave[0]) {
 		NL_SET_ERR_MSG_MOD(extack, "Slave1 does not exist");
-		PDEBUG("Slave1 does not exist");
+		printk(KERN_ERR "[prp] Slave1 does not exist");
 		return -EINVAL;
 	}
-	PDEBUG("Slave 1 verified");
+
 	slave[1] = __dev_get_by_index(src_net, nla_get_u32(data[IFLA_PRP_SLAVE2]));
 	if (!slave[1]) {
 		NL_SET_ERR_MSG_MOD(extack, "Slave2 does not exist");
-		PDEBUG("Slave1 does not exist");
+		printk(KERN_ERR "[prp] Slave1 does not exist");
 		return -EINVAL;
 	}
-	PDEBUG("Slave 2 verified");
 
 	return prp_dev_finalize(dev, slave, extack);
 }
@@ -62,7 +60,6 @@ static void prp_dellink(struct net_device *dev, struct list_head *head)
 {
 	struct prp_priv *prp = netdev_priv(dev);
 
-	PDEBUG("dellink called");
 	/*
 	 * TODO:
 	 * 	free node table
