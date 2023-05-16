@@ -172,11 +172,6 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	struct net_device *prp_dev;
 	int res;
 
-	/* why? */
-	res = dev_set_promiscuity(slave, 1);
-	if (res)
-		return res;
-
 	prp_dev = port->master;
 	res = netdev_upper_dev_link(slave, prp_dev, extack);
 	if (res)
