@@ -119,6 +119,7 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 		PDEBUG("%s:%s: netif_rx SUCCESS\n", __func__, dev->name);
 		/* TODO: Update stats */
 	}
+	kfree_skb(skb);
 }
 
 /**
