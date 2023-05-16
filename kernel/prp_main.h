@@ -48,7 +48,7 @@ struct prp_priv {
 	spinlock_t			sup_seqnr_lock;
 	unsigned char			sup_multicast_addr[ETH_ALEN] __aligned(sizeof(u16));
 					/* ether_addr_equal requires alignment to u16 */
-	struct rtnl_link_stats64	*dev_stats;
+	struct rtnl_link_stats64	*stats;
 	struct dentry			*node_tbl_root;
 };
 

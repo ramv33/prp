@@ -245,6 +245,7 @@ void prp_del_port(struct prp_port *port)
 int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 		     struct netlink_ext_ack *extack)
 {
+	struct rtnl_link_stats64 *stats;
 	struct prp_priv *prp = netdev_priv(prp_dev);
 	int ret = 0;
 
@@ -256,6 +257,14 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 
 	/* May need to provide parameter for last byte of mcast addr */
 	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
+
+	stats = kmalloc(sizeof(*stats), GFP_KERNEL);
+	if (!stats) {
+		printk(KERN_ERR "[prp] %s: failed to allocate rtnl_link_stats64\n",
+			__func__);
+		return -1;
+	}
+	prp->stats = stats;
 
 	/* Register our new device */
 	netif_carrier_off(prp_dev);		// why?
