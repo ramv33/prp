@@ -138,7 +138,6 @@ void prp_dev_setup(struct net_device *dev)
 {
 	eth_hw_addr_random(dev);
 	ether_setup(dev);
-	dev->min_mtu = 0;
 	dev->netdev_ops = &prp_device_ops;
 
 	SET_NETDEV_DEVTYPE(dev, &prp_type);
