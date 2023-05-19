@@ -1,5 +1,6 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
@@ -198,6 +199,41 @@ fail_upper_dev_link:
 	return res;
 }
 
+bool is_prp_slave(struct net_device *dev)
+{
+	return rcu_access_pointer(dev->rx_handler) == prp_recv_frame;
+}
+
+/**
+ * prp_slave_ok - Check if the device can be used as a slave
+ * @dev: device to be used as a PRP slave
+ */
+int prp_slave_ok(struct net_device *dev, struct netlink_ext_ack *extack)
+{
+	/* cannot use a PRP interface as a slave */
+	if (is_prp_master(dev)) {
+		NL_SET_ERR_MSG_MOD(extack, "Cannot use PRP master as a slave");
+		return -EINVAL;
+	}
+
+	if (is_prp_slave(dev)) {
+		NL_SET_ERR_MSG_MOD(extack, "Device is already a PRP slave");
+		return -EINVAL;
+	}
+
+	if (dev->priv_flags & IFF_DONT_BRIDGE) {
+		NL_SET_ERR_MSG_MOD(extack, "Device does not support bridging");
+		return -EOPNOTSUPP;
+	}
+
+	if (is_vlan_dev(dev)) {
+		NL_SET_ERR_MSG_MOD(extack, "Does not support VLAN yet");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /**
  * prp_add_ports - Add the 2 slave devices to prp_priv
  * 	Returns 0 on success, -1 on failure
@@ -208,6 +244,15 @@ fail_upper_dev_link:
 int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 		  struct net_device *slave[2], struct netlink_ext_ack *extack)
 {
+	int res;
+
+	res = prp_slave_ok(slave[0], extack);
+	if (res)
+		return res;
+	res = prp_slave_ok(slave[1], extack);
+	if (res)
+		return res;
+
 	prp->ports[0].dev = slave[0];
 	prp->ports[0].master = prp_dev;
 	prp->ports[0].lan = 0xA;
@@ -215,15 +260,17 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 	prp->ports[1].master = prp_dev;
 	prp->ports[1].lan = 0xB;
 
-	if (prp_port_setup(prp, slave[0], &prp->ports[0], extack) < 0)
+	res = prp_port_setup(prp, slave[0], &prp->ports[0], extack);
+	if (res)
 		goto fail;
-	if (prp_port_setup(prp, slave[1], &prp->ports[1], extack) < 0)
+	res = prp_port_setup(prp, slave[1], &prp->ports[1], extack);
+	if (res)
 		goto fail;
 
 	return 0;
 fail:
 	printk(KERN_ERR "[prp] %s: failed to setup port", __func__);
-	return -1;
+	return res;
 
 }
 
