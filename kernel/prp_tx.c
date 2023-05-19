@@ -95,22 +95,32 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	struct prp_rct *rct;
 
 	PDEBUG("prp_send_skb");
-	if (prp_prepare_skb(skb, dev) < 0)
-		return;
+
 	for (int i = 0; i < 2; ++i) {
-		/* maybe try incrementing refcount instead */
-		struct sk_buff *clone_skb = skb_clone(skb, GFP_ATOMIC);
-		if (!clone_skb) {
-			PDEBUG("%s: skb_clone returned NULL... continuing", __func__);
+		/* Need to copy skb since clone will only clone the skb_buff
+		 * and the refcount will be 1. Tailroom is extended for the RCT.
+		 */
+		struct sk_buff *skb_copy;
+		skb_copy = skb_copy_expand(skb, 0, skb_tailroom(skb) + PRP_RCTLEN,
+					   GFP_ATOMIC);
+		if (!skb_copy) {
+			PDEBUG("%s: skb_copy_expand returned NULL... continuing",
+				__func__);
 			continue;
 		}
-		clone_skb->dev = ports[i].dev;
-		rct = prp_get_rct(clone_skb);
+
+		/* Creates PRP tagged frame */
+		if (prp_prepare_skb(skb_copy, dev) < 0)
+			return;
+
+		skb_copy->dev = ports[i].dev;
+		rct = prp_get_rct(skb_copy);
 		prp_rct_set_lan_id(rct, ports[i].lan);
-		if (dev_queue_xmit(clone_skb))
+
+		if (dev_queue_xmit(skb_copy))
 			netdev_warn(dev, "failed to send over port %x", ports[i].lan);
 		else
 			PDEBUG("%s: sent over port %x: %s\n", __func__, ports[i].lan,
-				clone_skb->dev->name);
+				skb_copy->dev->name);
 	}
 }
