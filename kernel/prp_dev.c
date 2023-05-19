@@ -172,12 +172,18 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 
 	prp_dev = port->master;
 	res = netdev_upper_dev_link(slave, prp_dev, extack);
-	if (res)
+	if (res) {
+		NL_SET_ERR_MSG_MOD(extack, "Failed to link slave with master");
+		printk(KERN_ERR "%s: failed to link with upper dev", __func__);
 		goto fail_upper_dev_link;
+	}
 
 	res = netdev_rx_handler_register(slave, prp_recv_frame, port);
-	if (res)
+	if (res) {
+		NL_SET_ERR_MSG_MOD(extack, "Failed to register rx handler");
+		printk(KERN_ERR "%s: failed to register rx handler", __func__);
 		goto fail_rx_handler;
+	}
 
 	/* LRO combines several frames together. This can affect PRP, since the
 	 * RCT will be incorrect
@@ -187,10 +193,8 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	return 0;
 
 fail_rx_handler:
-	printk(KERN_ERR "%s: failed to register rx handler", __func__);
 	netdev_upper_dev_unlink(slave, prp_dev);
 fail_upper_dev_link:
-	PDEBUG(KERN_ERR "%s: failed to link with upper dev", __func__);
 	return res;
 }
 
