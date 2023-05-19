@@ -72,7 +72,6 @@ static int prp_prepare_skb(struct sk_buff *skb, struct net_device *dev)
 	ethhdr = (struct ethhdr *)skb_mac_header(skb);
 	proto = ethhdr->h_proto;
 
-	// TODO: Check if skb contains supervision frame
 	// TODO: Check node table for destination frame
 
 	/* Replace mac address with that of master which should be the same
