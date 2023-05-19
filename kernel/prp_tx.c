@@ -79,6 +79,7 @@ static int prp_prepare_skb(struct sk_buff *skb, struct net_device *dev)
 	 */
 	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
 	prp_add_rct(skb);
+
 	return 0;
 }
 

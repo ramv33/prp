@@ -171,6 +171,7 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	struct net_device *prp_dev;
 	int res;
 
+	PDEBUG("%s\n", __func__);
 	prp_dev = port->master;
 	res = netdev_upper_dev_link(slave, prp_dev, extack);
 	if (res) {
@@ -187,7 +188,7 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	}
 
 	/* LRO combines several frames together. This can affect PRP, since the
-	 * RCT will be incorrect
+	 * RCT will be incorrect.
 	 */
 	dev_disable_lro(slave);
 
@@ -212,21 +213,25 @@ int prp_slave_ok(struct net_device *dev, struct netlink_ext_ack *extack)
 {
 	/* cannot use a PRP interface as a slave */
 	if (is_prp_master(dev)) {
+		PDEBUG("Device %s is already a PRP master\n", dev->name);
 		NL_SET_ERR_MSG_MOD(extack, "Cannot use PRP master as a slave");
 		return -EINVAL;
 	}
 
 	if (is_prp_slave(dev)) {
+		PDEBUG("Device %s is already a PRP slave\n", dev->name);
 		NL_SET_ERR_MSG_MOD(extack, "Device is already a PRP slave");
 		return -EINVAL;
 	}
 
-	if (dev->priv_flags & IFF_DONT_BRIDGE) {
-		NL_SET_ERR_MSG_MOD(extack, "Device does not support bridging");
-		return -EOPNOTSUPP;
-	}
+	// if (dev->priv_flags & IFF_DONT_BRIDGE) {
+	// 	PDEBUG("Device %s doe not support bridging\n", dev->name);
+	// 	NL_SET_ERR_MSG_MOD(extack, "Device does not support bridging");
+	// 	return -EOPNOTSUPP;
+	// }
 
 	if (is_vlan_dev(dev)) {
+		PDEBUG("Device %s is a VLAN dev\n", dev->name);
 		NL_SET_ERR_MSG_MOD(extack, "Does not support VLAN yet");
 		return -EINVAL;
 	}
