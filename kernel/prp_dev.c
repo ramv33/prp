@@ -231,7 +231,6 @@ void prp_del_port(struct prp_port *port)
 	// PDEBUG("%s: dev='%s'", __func__, port->dev->name);
 
 	netdev_rx_handler_unregister(port->dev);
-	dev_set_promiscuity(port->dev, -1);
 	netdev_upper_dev_unlink(port->dev, port->master);
 }
 
