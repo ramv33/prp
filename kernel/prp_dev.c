@@ -189,7 +189,6 @@ fail_rx_handler:
 	netdev_upper_dev_unlink(slave, prp_dev);
 fail_upper_dev_link:
 	PDEBUG(KERN_ERR "%s: failed to link with upper dev", __func__);
-	dev_set_promiscuity(slave, -1);
 	return res;
 }
 
