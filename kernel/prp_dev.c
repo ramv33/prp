@@ -179,7 +179,9 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	if (res)
 		goto fail_rx_handler;
 
-	/* why? */
+	/* LRO combines several frames together. This can affect PRP, since the
+	 * RCT will be incorrect
+	 */
 	dev_disable_lro(slave);
 
 	return 0;
