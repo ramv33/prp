@@ -103,6 +103,7 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		struct sk_buff *skb_copy;
 		skb_copy = skb_copy_expand(skb, 0, skb_tailroom(skb) + PRP_RCTLEN,
 					   GFP_ATOMIC);
+		skb_reset_mac_len(skb_copy);
 		if (!skb_copy) {
 			PDEBUG("%s: skb_copy_expand returned NULL... continuing",
 				__func__);
