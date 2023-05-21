@@ -10,14 +10,18 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 				void *ptr)
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
-	/* Check if it is our device, i.e, PRP virtual interface */
+	/* Check if it is our device, i.e, PRP virtual interface
+	 * Also need to handle changes for slave devices like:
+	 * 	MTU change
+	 * 	Unregister
+	 */
 	char *name = dev->name;
 	if (!is_prp_master(dev))
 		return NOTIFY_DONE;
 	switch (event) {
-	case NETDEV_UP:
-	case NETDEV_DOWN:
-	case NETDEV_CHANGE:
+	case NETDEV_UP:		/* ifconfig <interface> up */
+	case NETDEV_DOWN:	/* ifconfig <interface> down */
+	case NETDEV_CHANGE:	/* Link/carrier state change */
 		prp_check_carrier_and_operstate(dev);
 		break;
 	case NETDEV_CHANGEADDR:
