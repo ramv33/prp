@@ -358,6 +358,11 @@ static void prp_set_operstate(struct net_device *dev, int state)
 	netdev_state_change(dev);
 }
 
+/**
+ * prp_check_carrier_and_operstate - Set operstate of master after checking
+ * 	slaves' state. Set carrier on if atleast one slave is up.
+ * @prp_dev: PRP master
+ */
 void prp_check_carrier_and_operstate(struct net_device *prp_dev)
 {
 	struct prp_priv *prp = netdev_priv(prp_dev);
