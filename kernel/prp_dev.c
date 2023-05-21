@@ -152,8 +152,8 @@ void prp_dev_setup(struct net_device *dev)
 			| NETIF_F_HW_CSUM 	/* Can checksum all packets */
 			;
 	dev->features = dev->hw_features;
-	/* prevent recursive tx locking? */
-	dev->features |= NETIF_F_LLTX;
+	// /* prevent recursive tx locking? */
+	// dev->features |= NETIF_F_LLTX;
 	/* cannot handle VLAN */
 	dev->features |= NETIF_F_VLAN_CHALLENGED;
 	/* "Does not change network namespaces" */
