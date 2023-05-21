@@ -269,6 +269,10 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 	res = prp_port_setup(prp, slave[0], &prp->ports[0], extack);
 	if (res)
 		goto fail;
+
+	if (slave[0] == slave[1])
+		return 0;
+
 	res = prp_port_setup(prp, slave[1], &prp->ports[1], extack);
 	if (res)
 		goto fail;
