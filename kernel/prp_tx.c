@@ -104,7 +104,7 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		/* Need to copy skb since clone will only clone the skb_buff
 		 * and the refcount will be 1. Tailroom is extended for the RCT.
 		 */
-		if (!is_up(ports[i].dev))
+		if (unlikely(!is_up(ports[i].dev)))
 			continue;
 
 		skb_copy = skb_copy_expand(skb, 0, skb_tailroom(skb) + PRP_RCTLEN,
