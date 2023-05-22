@@ -130,4 +130,5 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 			PDEBUG("%s: sent over port %x: %s\n", __func__, ports[i].lan,
 				skb_copy->dev->name);
 	}
+	kfree_skb(skb);
 }
