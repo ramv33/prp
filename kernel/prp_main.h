@@ -6,6 +6,22 @@
 #define PRP_RCTLEN	6
 #define PRP_SUFFIX	0x88fb
 
+/*
+ * PRP Constants defaults as in Table 8 of the IEC 62439-3:2016 std.
+ * We allow changing these as module parameters.
+ * (in milliseconds)
+ */
+/* Interval between two successive supervision frames */
+#define LIFE_CHECK_INTERVAL	2000
+/* Time to wait after the last frame received from a node, before removing it
+ * from the node table */
+#define NODE_FORGET_TIME	60000
+/* Maximum time a frame with a sequence number from a source is remembered
+ * for discarding */
+#define ENTRY_FORGET_TIME	400
+/* A node that reboots remains silent for this period */
+#define NODE_REBOOT_INTERVAL	500
+
 /**
  * PRP Redundancy Control Trailer (RCT) as specified in IEC 62439-3:2016 (p. 20)
  * Appended to frames.
