@@ -92,12 +92,12 @@ static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_dev *prp = netdev_priv(dev);
 
-	PDEBUG("%s: PID=%d\n", __func__, current->pid);
+	PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
 
 	skb_reset_mac_header(skb);
 	skb_reset_mac_len(skb);
-	/* set source MAC address to master's MAC which should be same as that
-	 * of the two slaves
+	/* Set source MAC address to master's MAC which should be same as that
+	 * of the two slaves.
 	 */
 	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
 	/* Forward to be sent through both slave devices */
