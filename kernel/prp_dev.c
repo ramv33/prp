@@ -17,11 +17,6 @@ unsigned char prp_def_multicast_addr[ETH_ALEN] __aligned(2) = {
 	0x01, 0x15, 0x4e, 0x00, 0x01, 0x00
 };
 
-static bool is_up(struct net_device *dev)
-{
-	return dev && (dev->flags && IFF_UP) && netif_oper_up(dev);
-}
-
 static struct device_type prp_type = {
 	.name = "prp"
 };
@@ -97,12 +92,12 @@ static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_dev *prp = netdev_priv(dev);
 
-	PDEBUG("%s: PID=%d\n", __func__, current->pid);
+	PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
 
 	skb_reset_mac_header(skb);
 	skb_reset_mac_len(skb);
-	/* set source MAC address to master's MAC which should be same as that
-	 * of the two slaves
+	/* Set source MAC address to master's MAC which should be same as that
+	 * of the two slaves.
 	 */
 	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
 	/* Forward to be sent through both slave devices */
@@ -371,6 +366,8 @@ void prp_check_carrier_and_operstate(struct net_device *prp_dev)
 {
 	struct prp_priv *prp = netdev_priv(prp_dev);
 	struct prp_port *ports = prp->ports;
+
+	ASSERT_RTNL();
 
 	/* netif_carrier_on if atleast one slave is up */
 	if (is_up(ports[0].dev) || is_up(ports[1].dev)) {
