@@ -180,6 +180,8 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		goto finish_consumed;
 	}
 
+	skb->dev = port->master;
+
 forward_upper:
 	prp_net_if(skb, port->master);
 
