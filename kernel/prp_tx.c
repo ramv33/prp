@@ -93,6 +93,7 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct prp_port *ports = prp_priv->ports;
 	struct prp_rct *rct;
+	struct sk_buff *skb_copy;
 	u16 seqnr;
 
 	PDEBUG("prp_send_skb");
@@ -103,7 +104,9 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		/* Need to copy skb since clone will only clone the skb_buff
 		 * and the refcount will be 1. Tailroom is extended for the RCT.
 		 */
-		struct sk_buff *skb_copy;
+		if (!is_up(ports[i].dev))
+			continue;
+
 		skb_copy = skb_copy_expand(skb, 0, skb_tailroom(skb) + PRP_RCTLEN,
 					   GFP_ATOMIC);
 		skb_reset_mac_len(skb_copy);
