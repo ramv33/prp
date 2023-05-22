@@ -17,11 +17,6 @@ unsigned char prp_def_multicast_addr[ETH_ALEN] __aligned(2) = {
 	0x01, 0x15, 0x4e, 0x00, 0x01, 0x00
 };
 
-static bool is_up(struct net_device *dev)
-{
-	return dev && (dev->flags && IFF_UP) && netif_oper_up(dev);
-}
-
 static struct device_type prp_type = {
 	.name = "prp"
 };
