@@ -372,6 +372,8 @@ void prp_check_carrier_and_operstate(struct net_device *prp_dev)
 	struct prp_priv *prp = netdev_priv(prp_dev);
 	struct prp_port *ports = prp->ports;
 
+	ASSERT_RTNL();
+
 	/* netif_carrier_on if atleast one slave is up */
 	if (is_up(ports[0].dev) || is_up(ports[1].dev)) {
 		netif_carrier_on(prp_dev);
