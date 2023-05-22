@@ -124,6 +124,7 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		rct = prp_get_rct(skb_copy);
 		prp_rct_set_lan_id(rct, ports[i].lan);
 
+		skb_tx_timestamp(skb_copy);
 		if (dev_queue_xmit(skb_copy))
 			netdev_warn(dev, "failed to send over port %x", ports[i].lan);
 		else
