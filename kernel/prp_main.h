@@ -60,8 +60,8 @@ struct prp_port {
 struct prp_priv {
 	struct prp_port			ports[2];
 	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
-	u16				sup_seqnr;
-	spinlock_t			sup_seqnr_lock;
+	atomic_t			sup_seqnr;
+	atomic_t			seqnr;
 	unsigned char			sup_multicast_addr[ETH_ALEN] __aligned(sizeof(u16));
 					/* ether_addr_equal requires alignment to u16 */
 	struct rtnl_link_stats64	*stats;

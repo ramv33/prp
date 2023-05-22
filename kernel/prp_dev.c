@@ -306,8 +306,8 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 	/* set hwaddr to be that of first slave's */
 	eth_hw_addr_set(prp_dev, slave[0]->dev_addr);
 
-	spin_lock_init(&prp->sup_seqnr_lock);
-	prp->sup_seqnr = 0;
+	atomic_set(&prp->sup_seqnr, 0);
+	atomic_set(&prp->seqnr, 0);
 
 	/* May need to provide parameter for last byte of mcast addr */
 	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);

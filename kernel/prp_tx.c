@@ -34,9 +34,8 @@ static inline void prp_rct_set_lan_id(struct prp_rct *rct, u8 lan_id)
 
 /**
  * Appends and sets the RCT for the frame.
- * Sets everything in the RCT except the sequence number.
  */
-inline void prp_add_rct(struct sk_buff *skb)
+inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
 {
 	struct prp_rct *rct;
 
@@ -47,6 +46,7 @@ inline void prp_add_rct(struct sk_buff *skb)
 	// 		skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	prp_set_lsdu_size(rct, skb);
 	rct->prp_suffix = htons(PRP_SUFFIX);
+	rct->seqnr = seqnr;
 	// PDEBUG("last 6 bytes of skb");
 	// char *tail = (char *)rct + 5;
 	// for (char *p = (char *)rct; p <= tail; p++)
@@ -57,7 +57,7 @@ inline void prp_add_rct(struct sk_buff *skb)
 /**
  * TX
  */
-static int prp_prepare_skb(struct sk_buff *skb, struct net_device *dev)
+static int prp_prepare_skb(u16 seqnr, struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct ethhdr *ethhdr;
@@ -78,7 +78,7 @@ static int prp_prepare_skb(struct sk_buff *skb, struct net_device *dev)
 	 * as that of the two slaves (both slaves have same MAC address)
 	 */
 	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
-	prp_add_rct(skb);
+	prp_add_rct(seqnr, skb);
 
 	return 0;
 }
@@ -93,9 +93,12 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct prp_port *ports = prp_priv->ports;
 	struct prp_rct *rct;
+	u16 seqnr;
 
 	PDEBUG("prp_send_skb");
 
+	seqnr = atomic_fetch_add(1, &prp_priv->seqnr) % (1 << 16);
+	barrier();
 	for (int i = 0; i < 2; ++i) {
 		/* Need to copy skb since clone will only clone the skb_buff
 		 * and the refcount will be 1. Tailroom is extended for the RCT.
@@ -111,7 +114,7 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		}
 
 		/* Creates PRP tagged frame */
-		if (prp_prepare_skb(skb_copy, dev) < 0)
+		if (prp_prepare_skb(seqnr, skb_copy, dev) < 0)
 			return;
 
 		skb_copy->dev = ports[i].dev;
