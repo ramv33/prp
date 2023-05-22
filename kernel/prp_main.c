@@ -6,6 +6,24 @@
 #include "prp_netlink.h"
 #include "debug.h"
 
+/* PRP constants - set them up as module parameters allowing change */
+static unsigned int life_check_interval  = LIFE_CHECK_INTERVAL;
+static unsigned int node_forget_time 	  = NODE_FORGET_TIME;
+static unsigned int entry_forget_time	  = ENTRY_FORGET_TIME;
+static unsigned int node_reboot_interval = NODE_REBOOT_INTERVAL;
+
+module_param(life_check_interval, uint, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(life_check_interval, "Interval between two successive"
+					"supervision frames");
+module_param(node_forget_time, uint, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(node_forget_time, "Time to wait after the last frame"
+		"received from a node, before removing it from the node table");
+module_param(entry_forget_time, uint, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(entry_forget_time, "Maximum time a frame with a sequence"
+		"number from a source is remembered for discarding");
+module_param(node_reboot_interval, uint, S_IRUGO|S_IWUSR);
+MODULE_PARM_DESC(node_reboot_interval, "Time to remain silent after rebooting");
+
 static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 				void *ptr)
 {
