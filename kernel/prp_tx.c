@@ -99,7 +99,6 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	PDEBUG("prp_send_skb");
 
 	seqnr = atomic_fetch_add(1, &prp_priv->seqnr) % (1 << 16);
-	barrier();
 	for (int i = 0; i < 2; ++i) {
 		/* Need to copy skb since clone will only clone the skb_buff
 		 * and the refcount will be 1. Tailroom is extended for the RCT.
