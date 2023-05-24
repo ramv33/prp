@@ -126,7 +126,6 @@ static void prp_net_if(bool prp, struct sk_buff *skb, struct net_device *dev)
 		PDEBUG("%s:%s: netif_rx SUCCESS\n", __func__, dev->name);
 		/* TODO: Update stats */
 	}
-	kfree_skb(skb);
 }
 
 /**
@@ -196,6 +195,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 forward_upper:
 	/* Forward to upper layer after removing any header and trailer */
 	prp_net_if(is_prp, skb, port->master);
+	kfree_skb(skb);
 
 finish_consumed:
 	return RX_HANDLER_CONSUMED;
