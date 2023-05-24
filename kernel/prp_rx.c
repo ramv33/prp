@@ -112,7 +112,7 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 
 	multicast = clone_skb->pkt_type == PACKET_MULTICAST;
 	skb_pull(clone_skb, ETH_HLEN);
-	len = skb->len;
+	len = clone_skb->len;
 	res = netif_rx(clone_skb);
 	if (res == NET_RX_DROP) {
 		PDEBUG("%s:%s: netif_rx DROPPED\n", __func__, dev->name);
