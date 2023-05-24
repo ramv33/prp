@@ -176,8 +176,10 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	if (!valid_rct(skb))
 		goto forward_upper;
 
-	if (prp_is_supervision_frame(skb))
+	if (prp_is_supervision_frame(skb)) {
 		prp_handle_supervision_frame(skb);
+		goto finish_consumed;
+	}
 
 	if (prp_is_duplicate(skb, port)) {
 		kfree_skb(skb);
