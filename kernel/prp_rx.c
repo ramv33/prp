@@ -169,6 +169,8 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	// PDEBUG("%s: mac_header=%d, network_header=%d", __func__, skb->mac_header,
 	// 	skb->network_header);
 
+	skb->dev = port->master;
+
 	/* Processing starts here */
 	if (!valid_rct(skb))
 		goto forward_upper;
@@ -181,7 +183,6 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		goto finish_consumed;
 	}
 
-	skb->dev = port->master;
 
 forward_upper:
 	prp_net_if(skb, port->master);
