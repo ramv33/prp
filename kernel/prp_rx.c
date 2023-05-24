@@ -102,6 +102,9 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 	int		len, res;
 
 	skb->dev = dev;
+
+	/* Remove RCT */
+	skb_trim(skb, skb->len - PRP_RCTLEN);
 	clone_skb = skb_clone(skb, GFP_ATOMIC);
 	if (!clone_skb) {
 		PDEBUG("%s: skb_clone returned NULL, not forwarding\n", __func__);
