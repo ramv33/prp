@@ -35,7 +35,7 @@ static inline void prp_rct_set_lan_id(struct prp_rct *rct, u8 lan_id)
 /**
  * Appends and sets the RCT for the frame.
  */
-inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
+inline void prp_add_rct(u8 lan, u16 seqnr, struct sk_buff *skb)
 {
 	struct prp_rct *rct;
 
@@ -47,6 +47,7 @@ inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
 	prp_set_lsdu_size(rct, skb);
 	rct->prp_suffix = htons(PRP_SUFFIX);
 	rct->seqnr = htons(seqnr);
+	prp_rct_set_lan_id(rct, lan);
 	// PDEBUG("last 6 bytes of skb");
 	// char *tail = (char *)rct + 5;
 	// for (char *p = (char *)rct; p <= tail; p++)
@@ -57,7 +58,8 @@ inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
 /**
  * TX
  */
-static int prp_prepare_skb(u16 seqnr, struct sk_buff *skb, struct net_device *dev)
+static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
+			   struct net_device *dev)
 {
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct ethhdr *ethhdr;
@@ -78,7 +80,7 @@ static int prp_prepare_skb(u16 seqnr, struct sk_buff *skb, struct net_device *de
 	 * as that of the two slaves (both slaves have same MAC address)
 	 */
 	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
-	prp_add_rct(seqnr, skb);
+	prp_add_rct(lan, seqnr, skb);
 
 	return 0;
 }
@@ -116,12 +118,10 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		}
 
 		/* Creates PRP tagged frame */
-		if (prp_prepare_skb(seqnr, skb_copy, dev) < 0)
+		if (prp_prepare_skb(seqnr, ports[i].lan, skb_copy, dev) < 0)
 			return;
 
 		skb_copy->dev = ports[i].dev;
-		rct = prp_get_rct(skb_copy);
-		prp_rct_set_lan_id(rct, ports[i].lan);
 
 		skb_tx_timestamp(skb_copy);
 		if (dev_queue_xmit(skb_copy))
