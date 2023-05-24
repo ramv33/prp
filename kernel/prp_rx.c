@@ -101,6 +101,7 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 	bool		multicast;
 	int		len, res;
 
+	multicast = skb->pkt_type == PACKET_MULTICAST;
 	skb->dev = dev;
 
 	/* Remove RCT */
@@ -111,9 +112,6 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 		return;
 	}
 
-	PDEBUG("%s: netif_queue_stopped = %d\n", __func__, netif_queue_stopped(dev));
-
-	multicast = clone_skb->pkt_type == PACKET_MULTICAST;
 	skb_pull(clone_skb, ETH_HLEN);
 	len = clone_skb->len;
 	res = netif_rx(clone_skb);
