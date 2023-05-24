@@ -88,9 +88,8 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct prp_port *port)
 }
 
 /**
- * prp_net_if - Forward frame to upper layer after stripping ETH_HDR.
- *	All processing for PRP is assumed to be done, we simply forward
- *	the skb to the upper layer.
+ * prp_net_if - Forward PRP-tagged frame to upper layer after stripping RCT and
+ * 		Ethernet header. All processing for PRP is assumed to be done.
  * @skb: Socket buffer
  * @dev: PRP master device; master's stats are updated.
  */
@@ -106,12 +105,14 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 
 	/* Remove RCT */
 	skb_trim(skb, skb->len - PRP_RCTLEN);
+
 	clone_skb = skb_clone(skb, GFP_ATOMIC);
 	if (!clone_skb) {
 		PDEBUG("%s: skb_clone returned NULL, not forwarding\n", __func__);
 		return;
 	}
 
+	/* Remove Ethernet header */
 	skb_pull(clone_skb, ETH_HLEN);
 	len = clone_skb->len;
 	res = netif_rx(clone_skb);
