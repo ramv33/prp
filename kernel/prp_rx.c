@@ -88,12 +88,14 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct prp_port *port)
 }
 
 /**
- * prp_net_if - Forward PRP-tagged frame to upper layer after stripping RCT and
- * 		Ethernet header. All processing for PRP is assumed to be done.
+ * prp_net_if - Forward frame to upper layer after stripping Ethernet header.
+ *		All processing for PRP is assumed to be done if it is a
+ *		PRP-tagged frame.
+ * @prp: Is a PRP-tagged frame?
  * @skb: Socket buffer
  * @dev: PRP master device; master's stats are updated.
  */
-static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
+static void prp_net_if(bool prp, struct sk_buff *skb, struct net_device *dev)
 {
 	struct sk_buff	*clone_skb;
 	static int	drop = 0;
@@ -104,7 +106,8 @@ static void prp_net_if(struct sk_buff *skb, struct net_device *dev)
 	skb->dev = dev;
 
 	/* Remove RCT */
-	skb_trim(skb, skb->len - PRP_RCTLEN);
+	if (prp)
+		skb_trim(skb, skb->len - PRP_RCTLEN);
 
 	clone_skb = skb_clone(skb, GFP_ATOMIC);
 	if (!clone_skb) {
@@ -139,6 +142,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	struct net_device *dev = skb->dev;
 	struct ethhdr *ethhdr;
 	struct prp_port *port;
+	bool is_prp = true;
 
 	// PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
 
@@ -173,8 +177,11 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	skb->dev = port->master;
 
 	/* Processing starts here */
-	if (!valid_rct(skb))
+	if (!valid_rct(skb)) {
+		is_prp = false;
+		PDEBUG("%s: PID=%d: not PRP-tagged frame\n", __func__, current->pid);
 		goto forward_upper;
+	}
 
 	if (prp_is_supervision_frame(skb)) {
 		prp_handle_supervision_frame(skb);
@@ -186,9 +193,9 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		goto finish_consumed;
 	}
 
-
 forward_upper:
-	prp_net_if(skb, port->master);
+	/* Forward to upper layer after removing any header and trailer */
+	prp_net_if(is_prp, skb, port->master);
 
 finish_consumed:
 	return RX_HANDLER_CONSUMED;
