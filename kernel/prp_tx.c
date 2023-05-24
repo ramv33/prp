@@ -76,10 +76,6 @@ static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
 
 	// TODO: Check node table for destination frame
 
-	/* Replace mac address with that of master which should be the same
-	 * as that of the two slaves (both slaves have same MAC address)
-	 */
-	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
 	prp_add_rct(lan, seqnr, skb);
 
 	return 0;
