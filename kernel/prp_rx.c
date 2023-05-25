@@ -96,7 +96,6 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct prp_port *port)
 static void prp_net_if(bool prp, struct sk_buff *skb, struct net_device *dev)
 {
 	struct sk_buff	*clone_skb;
-	static int	drop = 0;
 	bool		multicast;
 	int		len, res;
 
