@@ -74,8 +74,6 @@ static void prp_handle_supervision_frame(struct sk_buff *skb)
  */
 static bool prp_is_duplicate(struct sk_buff *skb, struct prp_port *port)
 {
-	static int drop = 0;
-
 	return false;
 	/* TODO:
 	 * 	Check if DUPLICATE frame by checking node table
