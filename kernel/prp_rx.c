@@ -100,7 +100,6 @@ static void prp_net_if(bool prp, struct sk_buff *skb, struct net_device *dev)
 	int		len, res;
 
 	multicast = skb->pkt_type == PACKET_MULTICAST;
-	skb->dev = dev;
 
 	/* Remove RCT */
 	if (prp)
