@@ -147,6 +147,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 
 	if (!skb_mac_header_was_set(skb)) {
 		WARN_ONCE(1, "%s: skb invalid: mac header not set", __func__);
+		return RX_HANDLER_PASS;
 	}
 
 	ethhdr = eth_hdr(skb);
