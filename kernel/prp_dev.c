@@ -372,13 +372,13 @@ void prp_check_carrier_and_operstate(struct net_device *prp_dev)
 	/* netif_carrier_on if atleast one slave is up */
 	if (is_up(ports[0].dev) || is_up(ports[1].dev)) {
 		netif_carrier_on(prp_dev);
-		if (prp_dev->flags && IFF_UP)
+		if (prp_dev->flags & IFF_UP)
 			prp_set_operstate(prp_dev, IF_OPER_UP);
 		else
 			prp_set_operstate(prp_dev, IF_OPER_DOWN);
 	} else {
 		netif_carrier_off(prp_dev);
-		if (prp_dev->flags && IFF_UP)	/* only slave ("lower layer") is down */
+		if (prp_dev->flags & IFF_UP)	/* only slave ("lower layer") is down */
 			prp_set_operstate(prp_dev, IF_OPER_LOWERLAYERDOWN);
 		else
 			prp_set_operstate(prp_dev, IF_OPER_DOWN);
