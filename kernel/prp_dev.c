@@ -90,7 +90,7 @@ static int prp_dev_close(struct net_device *dev)
 /* Transmit packet */
 static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct prp_dev *prp = netdev_priv(dev);
+	struct prp_priv *prp = netdev_priv(dev);
 
 	PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
 
