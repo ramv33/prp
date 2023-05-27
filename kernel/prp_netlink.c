@@ -63,10 +63,12 @@ static void prp_dellink(struct net_device *dev, struct list_head *head)
 	/*
 	 * TODO:
 	 * 	free node table
-	 * 	delete timer for PRUNE and ANNOUNCE
+	 * 	delete timer for PRUNE
 	 */
 	prp_del_port(&priv->ports[0]);
 	prp_del_port(&priv->ports[1]);
+
+	del_timer(&priv->sup_timer);
 
 	unregister_netdevice_queue(dev, head);
 }
