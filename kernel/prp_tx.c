@@ -128,3 +128,8 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	}
 	kfree_skb(skb);
 }
+
+void prp_send_supervision(struct net_device *prp)
+{
+	pr_info("%s: send supervision frame\n", __func__);
+}

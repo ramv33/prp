@@ -1,6 +1,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
+#include <linux/timer.h>
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
@@ -290,6 +291,22 @@ void prp_del_port(struct prp_port *port)
 	netdev_upper_dev_unlink(port->dev, port->master);
 }
 
+static void prp_sup_timer(struct timer_list *t)
+{
+	struct prp_priv *priv;
+	struct net_device *prp;
+
+	/* Get container of t */
+	priv = from_timer(priv, t, sup_timer);
+	prp = priv->ports[0].master;
+
+	prp_send_supervision(prp);
+
+	if (prp->flags & IFF_UP)
+		mod_timer(&priv->sup_timer,
+			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
+}
+
 /* Registers net_device for prp. */
 int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 		     struct netlink_ext_ack *extack)
@@ -303,6 +320,8 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 
 	atomic_set(&priv->sup_seqnr, 0);
 	atomic_set(&priv->seqnr, 0);
+
+	timer_setup(&priv->sup_timer, prp_sup_timer, 0);
 
 	/* May need to provide parameter for last byte of mcast addr */
 	ether_addr_copy(priv->sup_multicast_addr, prp_def_multicast_addr);
@@ -334,10 +353,11 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 	dev_set_mtu(prp, prp_get_max_mtu(priv->ports));
 
 	/* TODO:
-	 * 	Set timers for supervision and prune
+	 * 	Set timers for prune
 	 * 	Set up node table
 	 * 	Set up sysfs entry for node table
 	 */
+	mod_timer(&priv->sup_timer, jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
 
 	return 0;
 
@@ -358,6 +378,22 @@ static void prp_set_operstate(struct net_device *dev, int state)
 }
 
 /**
+ * prp_set_sup_timer - Initialise or delete timer for supervision frame.
+ * 	Initialise timer when DOWN -> UP
+ * 	Delete time when UP -> DOWN
+ */
+void prp_set_sup_timer(struct net_device *prp, unsigned char old_operstate)
+{
+	struct prp_priv *priv = netdev_priv(prp);
+
+	if (prp->operstate == IF_OPER_UP && old_operstate == IF_OPER_DOWN)
+		mod_timer(&priv->sup_timer,
+			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
+	else if (prp->operstate == IF_OPER_DOWN && old_operstate == IF_OPER_DOWN)
+		del_timer(&priv->sup_timer);
+}
+
+/**
  * prp_check_carrier_and_operstate - Set operstate of master after checking
  * 	slaves' state. Set carrier on if atleast one slave is up.
  * @prp: PRP master
@@ -366,9 +402,11 @@ void prp_check_carrier_and_operstate(struct net_device *prp)
 {
 	struct prp_priv *priv = netdev_priv(prp);
 	struct prp_port *ports = priv->ports;
+	unsigned char old_operstate;
 
 	ASSERT_RTNL();
 
+	old_operstate = prp->operstate;
 	/* netif_carrier_on if atleast one slave is up */
 	if (is_up(ports[0].dev) || is_up(ports[1].dev)) {
 		netif_carrier_on(prp);
@@ -383,4 +421,5 @@ void prp_check_carrier_and_operstate(struct net_device *prp)
 		else
 			prp_set_operstate(prp, IF_OPER_DOWN);
 	}
+	prp_set_sup_timer(prp, old_operstate);
 }

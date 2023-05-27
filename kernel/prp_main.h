@@ -55,11 +55,13 @@ struct prp_port {
  * @sup_seqnr:		Sequence number for supervision frames
  * @sup_multicast_addr:	Multicast address to which supervision frames are sent
  * @dev_stats:		Device statistics
+ * @sup_timer:		Timer for sending out supervision frames
  * @node_tbl_root:	sysfs entry for displaying nodes table
  */
 struct prp_priv {
 	struct prp_port			ports[2];
 	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
+	struct timer_list		sup_timer;
 	atomic_t			sup_seqnr;
 	atomic_t			seqnr;
 	unsigned char			sup_multicast_addr[ETH_ALEN] __aligned(sizeof(u16));
