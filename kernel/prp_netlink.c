@@ -70,6 +70,8 @@ static void prp_dellink(struct net_device *dev, struct list_head *head)
 
 	del_timer(&priv->sup_timer);
 
+	prp_del_node_table(priv);
+
 	unregister_netdevice_queue(dev, head);
 }
 

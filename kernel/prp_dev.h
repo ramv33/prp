@@ -23,4 +23,6 @@ int prp_get_max_mtu(struct prp_port ports[2]);
 /* Called from dellink */
 void prp_del_port(struct prp_port *port);
 
+void prp_del_node_table(struct prp_priv *priv);
+
 #endif /* __PRP_DEV_H */

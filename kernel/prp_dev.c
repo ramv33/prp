@@ -307,6 +307,17 @@ static void prp_sup_timer(struct timer_list *t)
 			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
 }
 
+static void prp_init_node_table(struct prp_priv *priv)
+{
+	hash_init(priv->node_table);
+}
+
+void prp_del_node_table(struct prp_priv *priv)
+{
+	// TODO
+	pr_info("%s\n", __func__);
+}
+
 /* Registers net_device for prp. */
 int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 		     struct netlink_ext_ack *extack)
@@ -356,6 +367,9 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 	 * 	Set timers for prune
 	 * 	Set up sysfs entry for node table
 	 */
+
+	/* initialise node table */
+	prp_init_node_table(priv);
 
 	return 0;
 

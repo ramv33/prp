@@ -48,6 +48,29 @@ struct prp_port {
 
 
 /**
+ * struct window - to implement the duplicate discard.
+ * TODO
+ */
+struct window {
+	unsigned long x;
+};
+
+/**
+ * Node table entry - Each entry is part of a linked list in a hash bucket.
+ * TODO: RCU protect it
+ */
+struct node_table_entry {
+	struct hlist_node	list;
+	/* remote node address */
+	unsigned char		mac[ETH_ALEN];
+	/* time the last frame arrived through the ports */
+	unsigned long		time_last_in[2];
+	struct window		*window;
+	bool			san_a;
+	bool			san_b;
+};
+
+/**
  * PRP net_device.priv structure
  * 
  * @ports:		Slave devices
