@@ -354,10 +354,8 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 
 	/* TODO:
 	 * 	Set timers for prune
-	 * 	Set up node table
 	 * 	Set up sysfs entry for node table
 	 */
-	mod_timer(&priv->sup_timer, jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
 
 	return 0;
 
