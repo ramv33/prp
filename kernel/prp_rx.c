@@ -36,13 +36,16 @@ static inline struct prp_port *get_rx_handler_data(struct net_device *dev)
 /**
  * valid_rct - Return true if skb has a valid PRP RCT
  */
-bool valid_rct(struct sk_buff *skb)
+bool valid_rct(struct sk_buff *skb, struct prp_port *port)
 {
 	struct prp_rct *rct;
 
 	rct = prp_get_rct(skb);
 	/* NULL if PRP suffix not valid, i.e, 0x88FB */
 	if (!rct)
+		return false;
+
+	if (port->lan != prp_get_lan_id(rct))
 		return false;
 
 	if (!prp_check_lsdu_size(skb, rct))
@@ -173,7 +176,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	skb->dev = port->master;
 
 	/* Processing starts here */
-	if (!valid_rct(skb)) {
+	if (!valid_rct(skb, port)) {
 		is_prp = false;
 		PDEBUG("%s: PID=%d: not PRP-tagged frame\n", __func__, current->pid);
 		goto forward_upper;
