@@ -5,6 +5,7 @@
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
+#include "prp_node.h"
 #include "prp_tx.h"
 #include "prp_rx.h"
 #include "debug.h"
@@ -310,17 +311,6 @@ static void prp_sup_timer(struct timer_list *t)
 	if (prp->flags & IFF_UP)
 		mod_timer(&priv->sup_timer,
 			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
-}
-
-static void prp_init_node_table(struct prp_priv *priv)
-{
-	hash_init(priv->node_table);
-}
-
-void prp_del_node_table(struct prp_priv *priv)
-{
-	// TODO
-	pr_info("%s\n", __func__);
 }
 
 /* Registers net_device for prp. */
