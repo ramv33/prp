@@ -76,6 +76,7 @@ struct node_table_entry {
  * @ports:		Slave devices
  * @node_table:		Node table (TODO)
  * @sup_seqnr:		Sequence number for supervision frames
+ * @seqnr:		Sequence number for other frames
  * @sup_multicast_addr:	Multicast address to which supervision frames are sent
  * @dev_stats:		Device statistics
  * @sup_timer:		Timer for sending out supervision frames
