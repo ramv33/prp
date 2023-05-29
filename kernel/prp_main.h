@@ -1,6 +1,9 @@
 #ifndef PRP_MAIN_H
 #define PRP_MAIN_H
 
+#include <linux/if_ether.h>
+#include <linux/spinlock.h>
+
 #define NODETABLE_SIZE	256
 
 #define PRP_RCTLEN	6
@@ -85,6 +88,7 @@ struct node_entry {
 struct prp_priv {
 	struct prp_port			ports[2];
 	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
+	spinlock_t			node_table_lock;
 	struct timer_list		sup_timer;
 	atomic_t			sup_seqnr;
 	atomic_t			seqnr;
