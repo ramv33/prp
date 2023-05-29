@@ -124,4 +124,10 @@ static inline int prp_get_lsdu_size(struct prp_rct *rct)
 
 }
 
+static inline int prp_get_lan_id(struct prp_rct *rct)
+{
+	return (ntohs(rct->lan_id_and_lsdu_size) & 0xf000) >> 12;
+
+}
+
 #endif /* PRP_MAIN_H */
