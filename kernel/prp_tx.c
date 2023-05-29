@@ -1,5 +1,6 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
@@ -81,6 +82,29 @@ static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
 }
 
 /**
+ * prp_pad_frame - Check if frame is a VLAN and pad accordingly.
+ * 	Called only for DANPs. See section 4.2.7.4.1 of IEC 62439-3:2016 p. 28
+ * @skb: sk_buff received from prp_dev_xmit
+ * @dev: PRP device
+ */
+static int prp_pad_frame(struct sk_buff *skb, struct net_device *dev)
+{
+	int min_size = ETH_ZLEN;	/* 60 octets */
+
+	if (eth_hdr(skb)->h_proto == htons(ETH_P_8021Q))
+		min_size = VLAN_ETH_ZLEN;	/* 64 octets */
+
+	if (skb_put_padto(skb, min_size)) {
+		pr_err("%s: failed to pad frame to %d bytes\n",
+			__func__, min_size);
+		return -1;
+	}
+
+	return 0;
+}
+
+
+/**
  * TX
  *
  * Send skb through both slave interfaces.
@@ -93,6 +117,10 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	u16 seqnr;
 
 	PDEBUG("prp_send_skb");
+
+	/* TODO: Check node table and pad only if destination is a DANP */
+	if (prp_pad_frame(skb, dev) < 0)
+		return;
 
 	seqnr = atomic_fetch_add(1, &prp_priv->seqnr) % (1 << 16);
 	for (int i = 0; i < 2; ++i) {
