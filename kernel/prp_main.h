@@ -52,7 +52,7 @@ struct prp_port {
  * TODO
  */
 struct window {
-	unsigned long x;
+	u16	seq_in;
 };
 
 /**
