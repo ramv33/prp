@@ -74,8 +74,6 @@ static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
 	ethhdr = (struct ethhdr *)skb_mac_header(skb);
 	proto = ethhdr->h_proto;
 
-	// TODO: Check node table for destination frame
-
 	prp_add_rct(lan, seqnr, skb);
 
 	return 0;
