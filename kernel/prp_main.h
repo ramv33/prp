@@ -57,10 +57,10 @@ struct window {
 
 /**
  * Node table entry - Each entry is part of a linked list in a hash bucket.
- * TODO: RCU protect it
  */
 struct node_entry {
 	struct hlist_node	list;
+	struct rcu_head		rcu;
 	/* remote node address */
 	unsigned char		mac[ETH_ALEN];
 	/* time the last frame arrived through the ports */
