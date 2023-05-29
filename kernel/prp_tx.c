@@ -61,7 +61,6 @@ inline void prp_add_rct(u8 lan, u16 seqnr, struct sk_buff *skb)
 static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
 			   struct net_device *dev)
 {
-	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct ethhdr *ethhdr;
 	unsigned short proto;
 
@@ -90,7 +89,6 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct prp_port *ports = prp_priv->ports;
-	struct prp_rct *rct;
 	struct sk_buff *skb_copy;
 	u16 seqnr;
 
