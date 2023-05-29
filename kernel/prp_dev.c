@@ -22,6 +22,11 @@ static struct device_type prp_type = {
 	.name = "prp"
 };
 
+bool is_up(struct net_device *dev)
+{
+	return dev && (dev->flags & IFF_UP) && netif_oper_up(dev);
+}
+
 /**
  * Return true if dev is PRP interface
  */

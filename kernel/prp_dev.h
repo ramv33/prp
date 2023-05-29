@@ -3,10 +3,8 @@
 
 #include <linux/netdevice.h>
 
-static bool is_up(struct net_device *dev)
-{
-	return dev && (dev->flags & IFF_UP) && netif_oper_up(dev);
-}
+bool is_up(struct net_device *dev);
+
 
 bool is_prp_master(struct net_device *dev);
 
