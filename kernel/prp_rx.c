@@ -45,6 +45,7 @@ bool valid_rct(struct sk_buff *skb, struct prp_port *port)
 	if (!rct)
 		return false;
 
+	/* TODO: need to increment error counter: CntErrWrongLanX */
 	if (port->lan != prp_get_lan_id(rct))
 		return false;
 
