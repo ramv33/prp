@@ -38,7 +38,7 @@
 
 struct prp_sup_tlv {
 	u8	type;
-	u8	length;
+	u8	len;
 };
 
 /* Values for prp_sup-tag.path_and_ver */
