@@ -67,7 +67,8 @@ static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
 
 	/* Check if skb contains ethhdr */
 	if (skb->mac_len < sizeof(struct ethhdr)) {
-		printk(KERN_ERR "prp_prepare_skb failed, skb does not contain ethhdr");
+		pr_err("prp_prepare_skb failed, skb does not contain ethhdr: %d\n",
+			skb->mac_len);
 		return -EINVAL;
 	}
 
