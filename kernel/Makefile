@@ -15,4 +15,4 @@ clean:
 	rm -vf mkprp
 
 mkprp:	mkprp.c
-	$(CC) -I /usr/include/libnl3 -lnl-3 -lnl-genl-3 mkprp.c -o mkprp.out -g
+	$(CC) mkprp.c -o mkprp.out -I /usr/include/libnl3 -lnl-3 -lnl-genl-3 -g
