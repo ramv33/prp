@@ -386,8 +386,8 @@ static void prp_set_operstate(struct net_device *dev, int state)
 
 /**
  * prp_set_sup_timer - Initialise or delete timer for supervision frame.
- * 	Initialise timer when DOWN -> UP
- * 	Delete time when UP -> DOWN
+ * 	Initialise timer when state changes from DOWN -> UP
+ * 	Delete time when when state changes from UP -> DOWN
  */
 void prp_set_sup_timer(struct net_device *prp, unsigned char old_operstate)
 {
