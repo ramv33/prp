@@ -59,8 +59,74 @@ bool valid_rct(struct sk_buff *skb, struct prp_port *port)
  * is_supervision_frame - Return true if supervision frame.
  * 	Maybe also get the node table entry here and store it in an argument.
  */
-static inline bool prp_is_supervision_frame(struct sk_buff *skb)
+static bool is_supervision_frame(struct sk_buff *skb, struct prp_priv *priv)
 {
+	struct ethhdr *ethhdr;
+	struct prp_sup_tlv *sup_tlv;
+	struct prp_sup_payload *payload;
+	int pulled = 0;
+
+	skb_dump(KERN_ERR, skb, true);
+
+	WARN_ON_ONCE(!skb_mac_header_was_set(skb));
+	ethhdr = eth_hdr(skb);
+
+	if (!ether_addr_equal(ethhdr->h_dest, priv->sup_multicast_addr))
+		return false;
+
+	if (ethhdr->h_proto != htons(ETH_P_PRP))
+		return false;
+
+	/* Pull Ethernet header to get start of supervision frame
+	 * (TODO: deal with VLAN?)
+	 */
+	if (!pskb_may_pull(skb, sizeof(*ethhdr)))
+		return false;
+	pulled += sizeof(struct ethhdr);
+	sup_tlv = skb_pull(skb, sizeof(*ethhdr));
+
+	/* Verify initial TLV1 type */
+	if (sup_tlv->type != PRP_TLV_DUPACCEPT
+	    && sup_tlv->type != PRP_TLV_DUPDISCARD)
+		goto out_false;
+	/* Verify TLV1 length; has to be 6 octets for MAC address */
+	if (sup_tlv->len != sizeof(struct prp_sup_payload))
+		goto out_false;
+	/* Get payload; move past sup_tlv */
+	if (!pskb_may_pull(skb, sizeof(*sup_tlv)))
+		goto out_false;
+	pulled += sizeof(*sup_tlv);
+	payload = skb_pull(skb, sizeof(*sup_tlv));
+	/* TODO: Process MAC */
+
+	/* Get RedBox MAC (TLV2), or TLV0 (end of TLVs); move past TLV1 */
+	if (!pskb_may_pull(skb, sizeof(*payload)))
+		goto out_false;
+	pulled += sizeof(*payload);
+	sup_tlv = skb_pull(skb, sizeof(*payload));
+	/* If anything other than RedBox MAC or end of TLV, return false */
+	if (sup_tlv->type == PRP_TLV_REDBOX_MAC) {
+		if(sup_tlv->len != sizeof(*payload))
+			return false;
+
+		/* Get next TLV, should be TLV0 */
+		if (!pskb_may_pull(skb, sizeof(*sup_tlv)))
+			goto out_false;
+		pulled += sizeof(*sup_tlv);
+		sup_tlv = skb_pull(skb, sizeof(*sup_tlv));
+	}
+
+	if (!(sup_tlv->type == 0 && sup_tlv->len == 0)) {
+		goto out_false;
+	}
+
+	/* Reset skb */
+	skb_push(skb, pulled);
+	return true;
+
+out_false:
+	/* Reset skb->data */
+	skb_push(skb, pulled);
 	return false;
 }
 
@@ -184,7 +250,10 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		goto forward_upper;
 	}
 
-	if (prp_is_supervision_frame(skb)) {
+	if (is_supervision_frame(skb, netdev_priv(port->master))) {
+		unsigned char *mac = eth_hdr(skb)->h_source;
+		pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
+			__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		prp_handle_supervision_frame(skb);
 		goto finish_consumed;
 	}
