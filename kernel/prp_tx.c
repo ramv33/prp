@@ -251,7 +251,7 @@ void prp_send_supervision(struct net_device *prp)
 	payload = skb_put(skb, sizeof(*payload));
 	ether_addr_copy(payload->mac, prp->dev_addr);
 
-	/* Set final TLV to mark end */
+	/* Set final TLV to mark end (could just let the pading do it) */
 	tlv0 = skb_put(skb, sizeof(*tlv0));
 	tlv0->type = tlv0->len = 0;
 
