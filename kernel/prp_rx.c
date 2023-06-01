@@ -139,8 +139,11 @@ out_false:
 
 /**
  * prp_handle_supervision_frame - Process supervision frame and update node table.
+ * @skb: sk_buff
+ * @port: Port through which we received the skb
  */
-static void prp_handle_supervision_frame(struct sk_buff *skb)
+static void prp_handle_supervision_frame(struct sk_buff *skb,
+					 struct prp_port *port)
 {
 	pr_info("%s: handled supervision frame\n", __func__);
 	return;
@@ -261,7 +264,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		unsigned char *mac = eth_hdr(skb)->h_source;
 		pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
 			__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-		prp_handle_supervision_frame(skb);
+		prp_handle_supervision_frame(skb, port);
 		goto finish_consumed;
 	}
 
