@@ -158,8 +158,7 @@ struct prp_tag {
  * @tlv: ?
  */
 struct prp_sup_tag {
-	__be16			path_and_ver;
-	__be16			sup_seqnr;
+	struct prp_tag		tag;
 	struct prp_sup_tlv	tlv;		/* TLV1 for MAC of DANP */
 } __packed;
 

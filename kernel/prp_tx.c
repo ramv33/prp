@@ -240,10 +240,10 @@ void prp_send_supervision(struct net_device *prp)
 
 	/* set up tag after ETH hdr - path, version, and sup_seqnr */
 	tag = skb_put(skb, sizeof(*tag));
-	tag->path_and_ver = ntohs(sup_tag_path_and_ver(PRP_SUP_TAG_PATH,
+	tag->tag.path_and_ver = ntohs(sup_tag_path_and_ver(PRP_SUP_TAG_PATH,
 						       PRP_SUP_TAG_VERSION));
 	sup_seqnr = atomic_fetch_add(1, &priv->sup_seqnr) & 0xffff;
-	tag->sup_seqnr = htons(sup_seqnr);
+	tag->tag.sup_seqnr = htons(sup_seqnr);
 	tag->tlv.type = PRP_TLV_DUPDISCARD;
 	tag->tlv.len = sizeof(*payload);
 
