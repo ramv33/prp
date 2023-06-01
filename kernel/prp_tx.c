@@ -244,7 +244,7 @@ void prp_send_supervision(struct net_device *prp)
 						       PRP_SUP_TAG_VERSION));
 	sup_seqnr = atomic_fetch_add(1, &priv->sup_seqnr) & 0xffff;
 	tag->sup_seqnr = htons(sup_seqnr);
-	tag->tlv.type = PRP_SUP_TLV_DUPDISCARD;
+	tag->tlv.type = PRP_TLV_DUPDISCARD;
 	tag->tlv.len = sizeof(*payload);
 
 	/* Set payload - our MAC address */

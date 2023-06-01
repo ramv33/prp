@@ -141,9 +141,9 @@ struct prp_sup_tlv {
 #define PRP_SUP_TAG_VERSION	0x1
 
 /* TLV Types for PRP supervision frame */
-#define PRP_SUP_TLV_DUPDISCARD	20
-#define PRP_SUP_TLV_DUPACCEPT	21
-#define PRP_SUP_TLV_REDBOX_MAC	30
+#define PRP_TLV_DUPDISCARD	20
+#define PRP_TLV_DUPACCEPT	21
+#define PRP_TLV_REDBOX_MAC	30
 
 /**
  * prp_sup_tag - Added after the Ethernet header for supervision frames.
