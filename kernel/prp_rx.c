@@ -56,7 +56,8 @@ bool valid_rct(struct sk_buff *skb, struct prp_port *port)
 }
 
 /**
- * prp_is_supervision_frame - Return true if supervision frame.
+ * is_supervision_frame - Return true if supervision frame.
+ * 	Maybe also get the node table entry here and store it in an argument.
  */
 static inline bool prp_is_supervision_frame(struct sk_buff *skb)
 {
@@ -64,11 +65,11 @@ static inline bool prp_is_supervision_frame(struct sk_buff *skb)
 }
 
 /**
- * prp_handle_supervision_frame - Process supervision frame and update
- *	 node table.
+ * prp_handle_supervision_frame - Process supervision frame and update node table.
  */
 static void prp_handle_supervision_frame(struct sk_buff *skb)
 {
+	pr_info("%s: handled supervision frame\n", __func__);
 	return;
 }
 
