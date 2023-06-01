@@ -70,7 +70,7 @@ struct node_entry {
 	unsigned long		time_last_in[2];
 	struct window		*window;
 	/* Store the last supervision seqnr received */
-	u16			sup_seqnr;
+	atomic_t		sup_seqnr;
 	bool			san_a;
 	bool			san_b;
 };
