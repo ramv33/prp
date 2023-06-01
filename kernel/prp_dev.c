@@ -314,7 +314,7 @@ static void prp_sup_timer(struct timer_list *t)
 	prp = priv->ports[0].master;
 
 	prp_send_supervision(prp);
-
+	/* Reset timer */
 	if (prp->flags & IFF_UP)
 		mod_timer(&priv->sup_timer,
 			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
