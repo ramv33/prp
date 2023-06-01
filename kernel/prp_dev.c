@@ -175,6 +175,12 @@ int prp_port_setup(struct prp_priv *priv, struct net_device *slave,
 	int res;
 
 	PDEBUG("%s\n", __func__);
+
+	/* To listen to PRP supervision frames; try to implement ip maddr */
+	res = dev_set_promiscuity(slave, 1);
+	if (res)
+		return res;
+
 	prp = port->master;
 	res = netdev_upper_dev_link(slave, prp, extack);
 	if (res) {
@@ -200,6 +206,7 @@ int prp_port_setup(struct prp_priv *priv, struct net_device *slave,
 fail_rx_handler:
 	netdev_upper_dev_unlink(slave, prp);
 fail_upper_dev_link:
+	dev_set_promiscuity(slave, -1);
 	return res;
 }
 
@@ -293,6 +300,7 @@ void prp_del_port(struct prp_port *port)
 {
 	// PDEBUG("%s: dev='%s'", __func__, port->dev->name);
 
+	dev_set_promiscuity(port->dev, -1);
 	netdev_rx_handler_unregister(port->dev);
 	netdev_upper_dev_unlink(port->dev, port->master);
 }
