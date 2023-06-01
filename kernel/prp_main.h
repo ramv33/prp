@@ -134,7 +134,7 @@ struct prp_priv {
 struct prp_sup_tlv {
 	u8	type;
 	u8	len;
-};
+} __packed;
 
 /* Values for prp_sup-tag.path_and_ver */
 #define PRP_SUP_TAG_PATH	0x0
@@ -144,6 +144,11 @@ struct prp_sup_tlv {
 #define PRP_TLV_DUPDISCARD	20
 #define PRP_TLV_DUPACCEPT	21
 #define PRP_TLV_REDBOX_MAC	30
+
+struct prp_tag {
+	__be16	path_and_ver;
+	__be16	sup_seqnr;
+} __packed ;
 
 /**
  * prp_sup_tag - Added after the Ethernet header for supervision frames.
@@ -156,11 +161,11 @@ struct prp_sup_tag {
 	__be16			path_and_ver;
 	__be16			sup_seqnr;
 	struct prp_sup_tlv	tlv;		/* TLV1 for MAC of DANP */
-};
+} __packed;
 
 struct prp_sup_payload {
 	unsigned char mac[ETH_ALEN];
-};
+} __packed;
 
 /**
  * RX, TX
