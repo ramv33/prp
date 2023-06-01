@@ -18,6 +18,8 @@ ETH1=$2
 IP=$3
 err=0
 
+insmod ./prp.ko
+
 ifconfig $1 > /dev/null 2>&1 || { echo "Invalid interface $1"; exit 1; }
 ifconfig $2 > /dev/null 2>&1 || { echo "Invalid interface $2"; exit 1; }
 
