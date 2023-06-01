@@ -62,6 +62,7 @@ bool valid_rct(struct sk_buff *skb, struct prp_port *port)
 static bool is_supervision_frame(struct sk_buff *skb, struct prp_priv *priv)
 {
 	struct ethhdr *ethhdr;
+	struct prp_tag *tag;
 	struct prp_sup_tlv *sup_tlv;
 	struct prp_sup_payload *payload;
 	int pulled = 0;
@@ -83,7 +84,13 @@ static bool is_supervision_frame(struct sk_buff *skb, struct prp_priv *priv)
 	if (!pskb_may_pull(skb, sizeof(*ethhdr)))
 		return false;
 	pulled += sizeof(struct ethhdr);
-	sup_tlv = skb_pull(skb, sizeof(*ethhdr));
+	tag = skb_pull(skb, sizeof(*ethhdr));
+
+	/* Get tag - path, version, and sup_seqnr */
+	if (!pskb_may_pull(skb, sizeof(*tag)))
+		return false;
+	pulled += sizeof(*tag);
+	sup_tlv = skb_pull(skb, sizeof(*tag));
 
 	/* Verify initial TLV1 type */
 	if (sup_tlv->type != PRP_TLV_DUPACCEPT
