@@ -145,7 +145,33 @@ out_false:
 static void prp_handle_supervision_frame(struct sk_buff *skb,
 					 struct prp_port *port)
 {
+	struct prp_tag *tag;
+	struct prp_sup_tlv *sup_tlv;
+	struct prp_sup_payload *payload;
+	struct node_entry *node;
+	struct prp_priv *priv = netdev_priv(port->master);
+	unsigned char *source_mac;
+	int mode = 0;	/* duplicate discard or accept */
+	u16 sup_seqnr;
+
 	pr_info("%s: handled supervision frame\n", __func__);
+
+	/* No need to check if we can pull since is_supervision_frame() did */
+	tag = skb_pull(skb, sizeof(struct ethhdr));
+	sup_seqnr = tag->sup_seqnr;
+
+	/* Get TLV1 */
+	sup_tlv = skb_pull(skb, sizeof(*tag));
+	mode = sup_tlv->type;
+	/* Get TLV1 payload, i.e, source MAC */
+	payload = skb_pull(skb, sizeof(*sup_tlv));
+	source_mac = payload->mac;
+
+	/* What to do with RedBox MAC? */
+
+	/* Get entry from node table */
+	node_entry = prp_get_node(source_mac, port, priv, true);
+
 	return;
 }
 
