@@ -251,10 +251,9 @@ void prp_send_supervision(struct net_device *prp)
 	payload = skb_put(skb, sizeof(*payload));
 	ether_addr_copy(payload->mac, prp->dev_addr);
 
-	/* Set final TLV to mark end (could just let the pading do it) */
-	tlv0 = skb_put(skb, sizeof(*tlv0));
-	tlv0->type = tlv0->len = 0;
-
+	/* Pad with zeroes. Implicitly sets TLV0 to mark the end.
+	 * TLV0.type = TLV0.len = 0
+	 */
 	if (skb_put_padto(skb, ETH_ZLEN)) {
 		pr_err("%s: failed to pad to %d octets\n", __func__, ETH_ZLEN);
 		return;
