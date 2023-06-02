@@ -38,6 +38,8 @@ void prp_del_node_table(struct prp_priv *priv)
 	for (int i = 0; i < HASH_SIZE(priv->node_table); ++i)
 		free_bucket(&priv->node_table[i]);
 	spin_unlock(&priv->node_table_lock);
+
+	synchronize_rcu();
 }
 
 /**
