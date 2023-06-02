@@ -62,8 +62,22 @@ static unsigned int hash_mac(unsigned char mac[ETH_ALEN], unsigned int nbuckets)
 struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 {
 	struct node_entry *newnode;
+	unsigned int key;
 
 	newnode = kmalloc(sizeof(*newnode), GFP_ATOMIC);
+	ether_addr_copy(newnode->mac, mac);
+	key = hash_mac(mac, HASH_SIZE(priv->node_table));
+
+	spin_lock(&priv->node_table_lock);
+
+	/* Add node to list here */
+	hash_add_rcu(priv->node_table, &newnode->list, key);
+
+	spin_unlock(&priv->node_table_lock);
+
+	synchronize_rcu();
+
+	return newnode;
 	/*
 	 * 1. Allocate a new node_entry, with .mac = mac
 	 * 2. Compute hash(mac)
