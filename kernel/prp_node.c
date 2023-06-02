@@ -90,15 +90,6 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv,
 	synchronize_rcu();
 
 	return newnode;
-	/*
-	 * 1. Allocate a new node_entry, with .mac = mac
-	 * 2. Compute hash(mac)
-	 * 3. spin_lock(&priv->node_table_lock)
-	 * 4. Add node to priv->node-table.
-	 * 5. spin_unlock(&priv->node_table_lock)
-	 * 6. synchronize_rcu()
-	 * 7. return new node
-	 */
 }
 
 /**
