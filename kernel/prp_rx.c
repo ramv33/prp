@@ -170,7 +170,7 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 	/* What to do with RedBox MAC? */
 
 	/* Get entry from node table */
-	node_entry = prp_get_node(source_mac, port, priv, true);
+	node_entry = prp_get_node(source_mac, port);
 
 	return;
 }
