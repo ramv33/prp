@@ -18,6 +18,7 @@ ETH1=$2
 IP=$3
 err=0
 
+rmmod prp && dmesg -C
 insmod ./prp.ko
 
 ifconfig $1 > /dev/null 2>&1 || { echo "Invalid interface $1"; exit 1; }
