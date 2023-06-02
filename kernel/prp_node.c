@@ -110,6 +110,7 @@ struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv)
 		if (ether_addr_equal(node->mac, mac))
 			return node;
 	}
+
 	/* Not found, add a new node and return it. */
 	return prp_add_node(mac, priv);
 }
