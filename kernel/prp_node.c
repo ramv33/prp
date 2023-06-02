@@ -77,6 +77,9 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv,
 	newnode->window = NULL;
 	/* 0xA & 0x1 = 0, 0xB & 0x1 = 1 */
 	newnode->time_last_in[lan & 0x1] = jiffies;
+	/* Set both san_a and san_b to true.
+	 * So the user can check if node is newly added or not. */
+	newnode->san_a = newnode->san_b = true;
 
 	key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
