@@ -140,13 +140,14 @@ out_false:
 
 /**
  * init_node_entry - Initialize some node entry fields.
- * 	Does not set time_last_in since that is set by prp_add_node.
  */
-static void init_node_entry(struct node_entry *node, bool san_a, bool san_b)
+static void init_node_entry(struct node_entry *node, u8 lan,
+			    bool san_a, bool san_b)
 {
+	/* 0xA & 0x1 = 0, 0xB & 0x1 = 1 */
+	node->time_last_in[lan&0x1] = jiffies;
 	node->san_a = san_a;
 	node->san_b = san_b;
-
 	/* DANP? */
 	if (!node->san_a && !node->san_b) {
 		node->window = kmalloc(sizeof(*(node->window)), GFP_ATOMIC);
