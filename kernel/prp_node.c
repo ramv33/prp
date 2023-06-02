@@ -1,4 +1,6 @@
+#include <linux/etherdevice.h>
 #include <linux/hashtable.h>
+#include <linux/xxhash.h>
 #include "prp_main.h"
 #include "prp_dev.h"
 #include "prp_node.h"
@@ -46,7 +48,7 @@ void prp_del_node_table(struct prp_priv *priv)
 static unsigned int hash_mac(unsigned char mac[ETH_ALEN], unsigned int nbuckets)
 {
 	uint64_t seed = 0x533d15deadbeef11;
-	unsigned long index = xxhash(addr, ETH_ALEN, seed);
+	unsigned long index = xxhash(mac, ETH_ALEN, seed);
 
 	return index % nbuckets;
 }
