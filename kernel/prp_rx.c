@@ -195,6 +195,14 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 		return;
 	/* Is a DANP since we received supervision frame */
 	init_node_entry(node, false, false);
+
+	/* init window */
+	// if (likely(node->window)) {
+	// 	/* set sup_seqnr */
+	// 	atomic_set(&(node->window->sup_seqnr), sup_seqnr);
+	// 	/* set normal sequence number too. */
+	// }
+
 	return;
 }
 
