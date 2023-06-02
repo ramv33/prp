@@ -139,6 +139,22 @@ out_false:
 }
 
 /**
+ * init_node_entry - Initialize some node entry fields.
+ * 	Does not set time_last_in since that is set by prp_add_node.
+ */
+static void init_node_entry(struct node_entry *node, bool san_a, bool san_b)
+{
+	node->san_a = san_a;
+	node->san_b = san_b;
+
+	/* Allocate window to implement sliding window */
+	node->window = kmalloc(sizeof(*(node->window)), GFP_ATOMIC);
+	if (!node->window)
+		pr_warn("%s: failed to allocate window for duplicate discard\n",
+			__func__);
+}
+
+/**
  * prp_handle_supervision_frame - Process supervision frame and update node table.
  * @skb: sk_buff
  * @port: Port through which we received the skb
@@ -174,6 +190,8 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 	node = prp_get_node(source_mac, priv, port->lan);
 	if (!node)
 		return;
+	/* Is a DANP since we received supervision frame */
+	init_node_entry(node, false, false);
 	return;
 }
 
