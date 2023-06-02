@@ -70,8 +70,6 @@ struct node_entry {
 	/* time the last frame arrived through the ports */
 	unsigned long		time_last_in[2];
 	struct window		*window;
-	/* Store the last supervision seqnr received */
-	atomic_t		sup_seqnr;
 	bool			san_a;
 	bool			san_b;
 };
