@@ -190,7 +190,7 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 	/* What to do with RedBox MAC? */
 
 	/* Get entry from node table, (RCU READ LOCK?) */
-	node = prp_get_node(source_mac, priv, port->lan);
+	node = prp_get_node(source_mac, priv);
 	if (!node)
 		return;
 	/* Is a DANP since we received supervision frame */
