@@ -149,7 +149,7 @@ static void init_node_entry(struct node_entry *node, u8 lan,
 	node->san_a = san_a;
 	node->san_b = san_b;
 	/* DANP? */
-	if (!node->san_a && !node->san_b) {
+	if (!node->san_a && !node->san_b && !node->window) {
 		node->window = kmalloc(sizeof(*(node->window)), GFP_ATOMIC);
 		if (!node->window)
 			pr_warn("%s: failed to allocate window for duplicate discard\n",
