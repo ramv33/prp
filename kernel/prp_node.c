@@ -23,6 +23,7 @@ static inline void free_bucket(struct hlist_head *bucket)
 
 	hlist_for_each_entry_safe(node, tmp, bucket, list) {
 		hlist_del_rcu(&node->list);
+		kfree(node->window);
 		kfree_rcu(node, rcu);
 	}
 }
