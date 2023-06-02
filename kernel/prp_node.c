@@ -58,8 +58,11 @@ static unsigned int hash_mac(unsigned char mac[ETH_ALEN], unsigned int nbuckets)
  *	Maybe set time_last_in too; would need LAN_ID.
  * @mac: MAC address to add to the node table.
  * @priv: PRP priv.
+ * @lan: LAN through which frame was received. Used to set the time_last_in
+ * 	field.
  */
-struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
+struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv,
+				u8 lan)
 {
 	struct node_entry *newnode;
 	unsigned int key;
@@ -70,6 +73,8 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 
 	ether_addr_copy(newnode->mac, mac);
 	newnode->window = NULL;
+	/* 0xA & 0x1 = 0, 0xB & 0x1 = 1 */
+	newnode->time_last_in[lan & 0x1] = jiffies;
 
 	key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
@@ -102,8 +107,12 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
  *
  * @mac: MAC address of remote node.
  * @priv: PRP priv.
+ * @lan: LAN through which the frame was received.
+ * 	Used only if new node is being allocated. prp_add_node uses it to set
+ * 	the time_last_in[lan] as early as possible.
  */
-struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv)
+struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv,
+				u8 lan)
 {
 	struct node_entry *node;
 	unsigned key = hash_mac(mac, HASH_SIZE(priv->node_table));
@@ -114,5 +123,5 @@ struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv)
 	}
 
 	/* Not found, add a new node and return it. */
-	return prp_add_node(mac, priv);
+	return prp_add_node(mac, priv, lan);
 }
