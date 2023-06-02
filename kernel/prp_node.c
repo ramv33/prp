@@ -65,6 +65,9 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 	unsigned int key;
 
 	newnode = kmalloc(sizeof(*newnode), GFP_ATOMIC);
+	if (!newnode)
+		return NULL;
+
 	ether_addr_copy(newnode->mac, mac);
 	key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
