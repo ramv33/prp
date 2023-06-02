@@ -45,7 +45,10 @@ void prp_del_node_table(struct prp_priv *priv)
  */
 static unsigned int hash_mac(unsigned char mac[ETH_ALEN], unsigned int nbuckets)
 {
-	/* use xxhash */
+	uint64_t seed = 0x533d15deadbeef11;
+	unsigned long index = xxhash(addr, ETH_ALEN, seed);
+
+	return index % nbuckets;
 }
 
 /**
