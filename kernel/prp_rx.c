@@ -195,7 +195,7 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 	if (!node)
 		return;
 	/* Is a DANP since we received supervision frame */
-	init_node_entry(node, false, false);
+	init_node_entry(node, port->lan, false, false);
 
 	/* init window */
 	// if (likely(node->window)) {
