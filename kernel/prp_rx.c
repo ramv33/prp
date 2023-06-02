@@ -4,6 +4,7 @@
 #include "prp_main.h"
 #include "prp_dev.h"
 #include "prp_rx.h"
+#include "prp_node.h"
 #include "debug.h"
 
 /**
@@ -170,7 +171,7 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 	/* What to do with RedBox MAC? */
 
 	/* Get entry from node table */
-	node_entry = prp_get_node(source_mac, port, port->lan);
+	node = prp_get_node(source_mac, priv, port->lan);
 
 	return;
 }
