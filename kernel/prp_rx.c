@@ -172,7 +172,8 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 
 	/* Get entry from node table */
 	node = prp_get_node(source_mac, priv, port->lan);
-
+	if (!node)
+		return;
 	return;
 }
 
