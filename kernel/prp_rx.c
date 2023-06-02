@@ -139,10 +139,10 @@ out_false:
 }
 
 /**
- * init_node_entry - Initialize some node entry fields.
+ * update_node_entry - Initialize some node entry fields.
  * 	Called every time supervision frame is received.
  */
-static void init_node_entry(struct node_entry *node, u8 lan,
+static void update_node_entry(struct node_entry *node, u8 lan,
 			    bool san_a, bool san_b)
 {
 	/* 0xA & 0x1 = 0, 0xB & 0x1 = 1 */
@@ -195,7 +195,7 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 	if (!node)
 		return;
 	/* Is a DANP since we received supervision frame */
-	init_node_entry(node, port->lan, false, false);
+	update_node_entry(node, port->lan, false, false);
 
 	/* init window */
 	// if (likely(node->window)) {
