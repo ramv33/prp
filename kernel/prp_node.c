@@ -79,16 +79,20 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
  * prp_get_node - Get entry from node table for given mac address.
  * 	If the node entry does not exist, prp_add_node() is called, and the new
  * 	node is returned.
- * 	Caller must be holding the RCU read lock???
+ * 	Caller must be holding the RCU read lock
  *
  * @mac: MAC address of remote node.
  * @priv: PRP priv.
  */
 struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv)
 {
-	/*
-	 * 1. Compute hash(mac) to get key.
-	 * 2. Search priv->node_table for mac (RCU read-side CS).
-	 * 3. If not found, return prp_add_node(mac, priv).
-	 */
+	struct node_entry *node;
+	unsigned key = hash_mac(mac, HASH_SIZE(priv->node_table));
+
+	hlist_for_each_entry_rcu(node, &priv->node_table[key], list) {
+		if (ether_addr_equal(node->mac, mac))
+			return node;
+	}
+	/* Not found, add a new node and return it. */
+	return prp_add_node(mac, priv);
 }
