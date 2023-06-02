@@ -55,7 +55,7 @@ static unsigned int hash_mac(unsigned char mac[ETH_ALEN], unsigned int nbuckets)
  * prp_add_node - Allocate and add a new node with @mac to the node table.
  *	Returns the newly allocated node on success. The fields must be set
  *	by the caller. Does NOT check if @mac exists in the node table.
- *
+ *	Maybe set time_last_in too; would need LAN_ID.
  * @mac: MAC address to add to the node table.
  * @priv: PRP priv.
  */
@@ -69,6 +69,8 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 		return NULL;
 
 	ether_addr_copy(newnode->mac, mac);
+	newnode->window = NULL;
+
 	key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
 	spin_lock(&priv->node_table_lock);
