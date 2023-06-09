@@ -54,9 +54,11 @@ struct prp_port {
  * struct window - to implement the duplicate discard.
  * TODO
  * @sup_seqnr_in: Sequence number for last supervision frame received.
+ * @last_jiffies: When did the latest frame in the window arrive.
  */
 struct window {
 	atomic_t	sup_seqnr_in;
+	unsigned long	last_jiffies;
 };
 
 /**
