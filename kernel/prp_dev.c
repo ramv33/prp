@@ -97,8 +97,6 @@ static int prp_dev_close(struct net_device *dev)
 /* Transmit packet */
 static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct prp_priv *priv = netdev_priv(dev);
-
 	PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
 
 	skb_reset_mac_header(skb);
