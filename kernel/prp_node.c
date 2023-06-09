@@ -118,3 +118,36 @@ struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv)
 	/* Not found, add a new node and return it. */
 	return prp_add_node(mac, priv);
 }
+
+/**
+ * prp_prune_nodes - Remove stale node table entries; ones we have not heard
+ * from for HSR_LIFE_CHECK_INTERVAL milliseconds (2 seconds).
+ */
+void prp_prune_nodes(struct timer_list *t)
+{
+	struct prp_priv *priv = from_timer(priv, t, prune_timer);
+	struct hlist_node *tmp;
+	struct node_entry *node;
+	unsigned long time_a, time_b;
+
+	pr_info("%s: pruning\n", __func__);
+	spin_lock_bh(&priv->node_table_lock);
+
+	for (int i = 0; i < NODETABLE_SIZE; i++) {
+		hlist_for_each_entry_safe(node, tmp, &priv->node_table[i],
+					  list) {
+			time_a = node->time_last_in[0];
+			time_b = node->time_last_in[1];
+			/* Remove from list if last frame from node was received
+			 * longer than NODE_FORGET_TIME ago.
+			 */
+			if (false /* condition here */) {
+				hlist_del_rcu(&node->list);
+				kfree_rcu(node, rcu);
+			}
+		}
+	}
+	spin_unlock_bh(&priv->node_table_lock);
+
+	mod_timer(&priv->prune_timer, jiffies + msecs_to_jiffies(PRUNE_PERIOD));
+}

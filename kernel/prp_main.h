@@ -19,6 +19,8 @@
 /* Time to wait after the last frame received from a node, before removing it
  * from the node table */
 #define NODE_FORGET_TIME	60000
+/* How often do we prune nodes older than NODE_FORGET_TIME */
+#define PRUNE_PERIOD		3000
 /* Maximum time a frame with a sequence number from a source is remembered
  * for discarding */
 #define ENTRY_FORGET_TIME	400
@@ -87,6 +89,7 @@ struct node_entry {
  * @sup_multicast_addr:	Multicast address to which supervision frames are sent
  * @dev_stats:		Device statistics
  * @sup_timer:		Timer for sending out supervision frames
+ * @prune_timer:	Timer for removing stale node table entries
  * @node_tbl_root:	sysfs entry for displaying nodes table
  */
 struct prp_priv {
@@ -94,6 +97,7 @@ struct prp_priv {
 	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
 	spinlock_t			node_table_lock;
 	struct timer_list		sup_timer;
+	struct timer_list		prune_timer;
 	atomic_t			sup_seqnr;
 	atomic_t			seqnr;
 	unsigned char			sup_multicast_addr[ETH_ALEN] __aligned(sizeof(u16));

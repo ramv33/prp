@@ -355,6 +355,7 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 	atomic_set(&priv->seqnr, 0);
 
 	timer_setup(&priv->sup_timer, prp_sup_timer, 0);
+	timer_setup(&priv->prune_timer, prp_prune_nodes, 0);
 
 	/* May need to provide parameter for last byte of mcast addr */
 	ether_addr_copy(priv->sup_multicast_addr, prp_def_multicast_addr);
@@ -386,12 +387,14 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 	dev_set_mtu(prp, prp_get_max_mtu(priv->ports));
 
 	/* TODO:
-	 * 	Set timers for prune
 	 * 	Set up sysfs entry for node table
 	 */
 
 	/* initialise node table */
 	prp_init_node_table(priv);
+
+	mod_timer(&priv->prune_timer,
+			jiffies + msecs_to_jiffies(PRUNE_PERIOD));
 
 	return 0;
 
