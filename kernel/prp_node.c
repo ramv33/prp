@@ -11,6 +11,14 @@ inline void prp_init_node_table(struct prp_priv *priv)
 	hash_init(priv->node_table);
 }
 
+static void free_node(struct rcu_head *rcu)
+{
+	struct node_entry *node = container_of(rcu, struct node_entry, rcu);
+
+	kfree(node->window);
+	kfree(node);
+}
+
 /**
  * free_bucket - Clears a hash bucket. Called holding @node_table_lock.
  * 	Deletes the nodes in the bucket and frees them.
@@ -23,8 +31,7 @@ static inline void free_bucket(struct hlist_head *bucket)
 
 	hlist_for_each_entry_safe(node, tmp, bucket, list) {
 		hlist_del_rcu(&node->list);
-		kfree(node->window);
-		kfree_rcu(node, rcu);
+		call_rcu(&node->rcu, free_node);
 	}
 }
 
