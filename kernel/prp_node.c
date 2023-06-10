@@ -95,8 +95,6 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 
 	spin_unlock(&priv->node_table_lock);
 
-	synchronize_rcu();
-
 	return newnode;
 }
 
