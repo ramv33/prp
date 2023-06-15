@@ -77,7 +77,8 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 		return NULL;
 
 	ether_addr_copy(newnode->mac, mac);
-	newnode->window = NULL;
+	/* window is only needed for DANP, we do not know yet */
+	newnode->window = NULL;	
 	/* Set both san_a and san_b to true.
 	 * So the user can check if node is newly added or not. */
 	newnode->san_a = newnode->san_b = true;
