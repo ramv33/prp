@@ -312,8 +312,6 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	skb_push(skb, ETH_HLEN);
 	skb_reset_mac_header(skb);
 	skb_reset_mac_len(skb);
-	// PDEBUG("%s: mac_header=%d, network_header=%d", __func__, skb->mac_header,
-	// 	skb->network_header);
 
 	skb->dev = port->master;
 
