@@ -341,6 +341,7 @@ forward_upper:
 	kfree_skb(skb);
 
 finish_consumed:
+	write_unlock(&priv->node_table_lock);
 	return RX_HANDLER_CONSUMED;
 
 finish_pass:

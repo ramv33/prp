@@ -11,10 +11,8 @@ inline void prp_init_node_table(struct prp_priv *priv)
 	hash_init(priv->node_table);
 }
 
-static void free_node(struct rcu_head *rcu)
+static void free_node(struct node_entry *node)
 {
-	struct node_entry *node = container_of(rcu, struct node_entry, rcu);
-
 	kfree(node->window);
 	kfree(node);
 }
@@ -30,8 +28,8 @@ static inline void free_bucket(struct hlist_head *bucket)
 	struct hlist_node *tmp;
 
 	hlist_for_each_entry_safe(node, tmp, bucket, list) {
-		hlist_del_rcu(&node->list);
-		call_rcu(&node->rcu, free_node);
+		hlist_del(&node->list);
+		free_node(node);
 	}
 }
 
@@ -41,10 +39,10 @@ static inline void free_bucket(struct hlist_head *bucket)
  */
 void prp_del_node_table(struct prp_priv *priv)
 {
-	spin_lock(&priv->node_table_lock);
+	write_lock(&priv->node_table_lock);
 	for (int i = 0; i < HASH_SIZE(priv->node_table); ++i)
 		free_bucket(&priv->node_table[i]);
-	spin_unlock(&priv->node_table_lock);
+	write_unlock(&priv->node_table_lock);
 }
 
 /**
@@ -86,12 +84,10 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 
 	key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
-	spin_lock(&priv->node_table_lock);
-
 	/* Add node to list here */
-	hash_add_rcu(priv->node_table, &newnode->list, key);
-
-	spin_unlock(&priv->node_table_lock);
+	write_lock(&priv->node_table_lock);
+	hash_add(priv->node_table, &newnode->list, key);
+	write_unlock(&priv->node_table_lock);
 
 	return newnode;
 }
@@ -113,7 +109,7 @@ struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv)
 	struct node_entry *node;
 	unsigned key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
-	hlist_for_each_entry_rcu(node, &priv->node_table[key], list) {
+	hlist_for_each_entry(node, &priv->node_table[key], list) {
 		if (ether_addr_equal(node->mac, mac))
 			return node;
 	}
@@ -134,8 +130,7 @@ void prp_prune_nodes(struct timer_list *t)
 	unsigned long time_a, time_b;
 
 	pr_info("%s: pruning\n", __func__);
-	spin_lock_bh(&priv->node_table_lock);
-
+	write_lock_bh(&priv->node_table_lock);
 	for (int i = 0; i < NODETABLE_SIZE; i++) {
 		hlist_for_each_entry_safe(node, tmp, &priv->node_table[i],
 					  list) {
@@ -145,12 +140,12 @@ void prp_prune_nodes(struct timer_list *t)
 			 * longer than NODE_FORGET_TIME ago.
 			 */
 			if (false /* condition here */) {
-				hlist_del_rcu(&node->list);
-				kfree_rcu(node, rcu);
+				hlist_del(&node->list);
+				free_node(node);
 			}
 		}
 	}
-	spin_unlock_bh(&priv->node_table_lock);
+	write_unlock_bh(&priv->node_table_lock);
 
 	mod_timer(&priv->prune_timer, jiffies + msecs_to_jiffies(PRUNE_PERIOD));
 }

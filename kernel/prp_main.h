@@ -69,7 +69,6 @@ struct window {
  */
 struct node_entry {
 	struct hlist_node	list;
-	struct rcu_head		rcu;
 	/* remote node address */
 	unsigned char		mac[ETH_ALEN];
 	/* time the last frame arrived through the ports */
@@ -95,7 +94,7 @@ struct node_entry {
 struct prp_priv {
 	struct prp_port			ports[2];
 	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
-	spinlock_t			node_table_lock;
+	rwlock_t			node_table_lock;
 	struct timer_list		sup_timer;
 	struct timer_list		prune_timer;
 	atomic_t			sup_seqnr;

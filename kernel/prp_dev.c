@@ -310,15 +310,15 @@ static void prp_dump_node_table(struct prp_priv *priv)
 	struct node_entry *curr;
 	int i;
 
-	rcu_read_lock();
-	hash_for_each_rcu(priv->node_table, i, curr, list) {
+	read_lock(&priv->node_table_lock);
+	hash_for_each(priv->node_table, i, curr, list) {
 		unsigned char *mac = curr->mac;
 		pr_info("%s: %02x:%02x:%02x:%02x:%02x:%02x\n"
 			"san_a=%d, san_b=%d", __func__,
 			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
 			curr->san_a, curr->san_b);
 	}
-	rcu_read_unlock();
+	read_unlock(&priv->node_table_lock);
 }
 
 static void prp_sup_timer(struct timer_list *t)
