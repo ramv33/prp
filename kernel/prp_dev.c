@@ -1,9 +1,11 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
+#include <linux/timer.h>
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
+#include "prp_node.h"
 #include "prp_tx.h"
 #include "prp_rx.h"
 #include "debug.h"
@@ -20,6 +22,11 @@ unsigned char prp_def_multicast_addr[ETH_ALEN] __aligned(2) = {
 static struct device_type prp_type = {
 	.name = "prp"
 };
+
+bool is_up(struct net_device *dev)
+{
+	return dev && (dev->flags & IFF_UP) && netif_oper_up(dev);
+}
 
 /**
  * Return true if dev is PRP interface
@@ -46,11 +53,11 @@ int prp_get_max_mtu(struct prp_port ports[2])
 static int prp_dev_change_mtu(struct net_device *dev, int mtu)
 {
 	/* TODO: Ensure it does not exceed max MTU of either slave */
-	struct prp_priv *prp;
+	struct prp_priv *priv;
 	int max_mtu;
 
-	prp = netdev_priv(dev);
-	max_mtu = prp_get_max_mtu(prp->ports);
+	priv = netdev_priv(dev);
+	max_mtu = prp_get_max_mtu(priv->ports);
 	if (mtu > max_mtu) {
 		netdev_info(dev, "MTU must be <= (min(slaves' mtu) - PRP_RCTLEN(6))\n"
 				"For this device, it is %d octets\n", max_mtu);
@@ -68,12 +75,12 @@ static int prp_dev_change_mtu(struct net_device *dev, int mtu)
  */
 static int prp_dev_open(struct net_device *dev)
 {
-	struct prp_priv *prp = netdev_priv(dev);
+	struct prp_priv *priv = netdev_priv(dev);
 
 	// PDEBUG("prp_dev_open\n");
-	if (!is_up(prp->ports[0].dev))
+	if (!is_up(priv->ports[0].dev))
 		netdev_warn(dev, "Slave A is not up\n");
-	if (!is_up(prp->ports[1].dev))
+	if (!is_up(priv->ports[1].dev))
 		netdev_warn(dev, "Slave B is not up\n");
 
 	return 0;
@@ -90,8 +97,6 @@ static int prp_dev_close(struct net_device *dev)
 /* Transmit packet */
 static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct prp_dev *prp = netdev_priv(dev);
-
 	PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
 
 	skb_reset_mac_header(skb);
@@ -161,15 +166,21 @@ void prp_dev_setup(struct net_device *dev)
  * 	Also sets the dev->rx_handler_data to the prp_port
  * 	Return 0 on success, non-zero on failure.
  */
-int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
+int prp_port_setup(struct prp_priv *priv, struct net_device *slave,
 		   struct prp_port *port, struct netlink_ext_ack *extack)
 {
-	struct net_device *prp_dev;
+	struct net_device *prp;
 	int res;
 
 	PDEBUG("%s\n", __func__);
-	prp_dev = port->master;
-	res = netdev_upper_dev_link(slave, prp_dev, extack);
+
+	/* To listen to PRP supervision frames; try to implement ip maddr */
+	res = dev_set_promiscuity(slave, 1);
+	if (res)
+		return res;
+
+	prp = port->master;
+	res = netdev_upper_dev_link(slave, prp, extack);
 	if (res) {
 		NL_SET_ERR_MSG_MOD(extack, "Failed to link slave with master");
 		printk(KERN_ERR "%s: failed to link with upper dev", __func__);
@@ -191,8 +202,9 @@ int prp_port_setup(struct prp_priv *prp, struct net_device *slave,
 	return 0;
 
 fail_rx_handler:
-	netdev_upper_dev_unlink(slave, prp_dev);
+	netdev_upper_dev_unlink(slave, prp);
 fail_upper_dev_link:
+	dev_set_promiscuity(slave, -1);
 	return res;
 }
 
@@ -238,11 +250,11 @@ int prp_slave_ok(struct net_device *dev, struct netlink_ext_ack *extack)
 /**
  * prp_add_ports - Add the 2 slave devices to prp_priv
  * 	Returns 0 on success, -1 on failure
- * @prp: PRP device's private structure
- * @prp_dev: PRP device
+ * @priv: PRP device's private structure
+ * @prp: PRP device
  * @slave: Array of pointers to the 2 slave devices
  */
-int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
+int prp_add_ports(struct prp_priv *priv, struct net_device *prp,
 		  struct net_device *slave[2], struct netlink_ext_ack *extack)
 {
 	int res;
@@ -254,21 +266,21 @@ int prp_add_ports(struct prp_priv *prp, struct net_device *prp_dev,
 	if (res)
 		return res;
 
-	prp->ports[0].dev = slave[0];
-	prp->ports[0].master = prp_dev;
-	prp->ports[0].lan = 0xA;
-	prp->ports[1].dev = slave[1];
-	prp->ports[1].master = prp_dev;
-	prp->ports[1].lan = 0xB;
+	priv->ports[0].dev = slave[0];
+	priv->ports[0].master = prp;
+	priv->ports[0].lan = 0xA;
+	priv->ports[1].dev = slave[1];
+	priv->ports[1].master = prp;
+	priv->ports[1].lan = 0xB;
 
-	res = prp_port_setup(prp, slave[0], &prp->ports[0], extack);
+	res = prp_port_setup(priv, slave[0], &priv->ports[0], extack);
 	if (res)
 		goto fail;
 
 	if (slave[0] == slave[1])
 		return 0;
 
-	res = prp_port_setup(prp, slave[1], &prp->ports[1], extack);
+	res = prp_port_setup(priv, slave[1], &priv->ports[1], extack);
 	if (res)
 		goto fail;
 
@@ -284,28 +296,69 @@ fail:
  */
 void prp_del_port(struct prp_port *port)
 {
+	if (!port->dev)
+		return;
 	// PDEBUG("%s: dev='%s'", __func__, port->dev->name);
-
+	dev_set_promiscuity(port->dev, -1);
 	netdev_rx_handler_unregister(port->dev);
 	netdev_upper_dev_unlink(port->dev, port->master);
+	port->dev = NULL;
+}
+
+static void prp_dump_node_table(struct prp_priv *priv)
+{
+	struct node_entry *curr;
+	int i;
+
+	rcu_read_lock();
+	hash_for_each_rcu(priv->node_table, i, curr, list) {
+		unsigned char *mac = curr->mac;
+		pr_info("%s: %02x:%02x:%02x:%02x:%02x:%02x\n"
+			"san_a=%d, san_b=%d", __func__,
+			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+			curr->san_a, curr->san_b);
+	}
+	rcu_read_unlock();
+}
+
+static void prp_sup_timer(struct timer_list *t)
+{
+	struct prp_priv *priv;
+	struct net_device *prp;
+
+	/* Get container of t */
+	priv = from_timer(priv, t, sup_timer);
+	prp = priv->ports[0].master;
+
+	/* for debugging */
+	prp_dump_node_table(priv);
+
+	prp_send_supervision(prp);
+	/* Reset timer */
+	if (prp->flags & IFF_UP)
+		mod_timer(&priv->sup_timer,
+			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
 }
 
 /* Registers net_device for prp. */
-int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
+int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 		     struct netlink_ext_ack *extack)
 {
 	struct rtnl_link_stats64 *stats;
-	struct prp_priv *prp = netdev_priv(prp_dev);
+	struct prp_priv *priv = netdev_priv(prp);
 	int ret = 0;
 
 	/* set hwaddr to be that of first slave's */
-	eth_hw_addr_set(prp_dev, slave[0]->dev_addr);
+	eth_hw_addr_set(prp, slave[0]->dev_addr);
 
-	atomic_set(&prp->sup_seqnr, 0);
-	atomic_set(&prp->seqnr, 0);
+	atomic_set(&priv->sup_seqnr, 0);
+	atomic_set(&priv->seqnr, 0);
+
+	timer_setup(&priv->sup_timer, prp_sup_timer, 0);
+	timer_setup(&priv->prune_timer, prp_prune_nodes, 0);
 
 	/* May need to provide parameter for last byte of mcast addr */
-	ether_addr_copy(prp->sup_multicast_addr, prp_def_multicast_addr);
+	ether_addr_copy(priv->sup_multicast_addr, prp_def_multicast_addr);
 
 	stats = kmalloc(sizeof(*stats), GFP_KERNEL);
 	if (!stats) {
@@ -313,36 +366,40 @@ int prp_dev_finalize(struct net_device *prp_dev, struct net_device *slave[2],
 			__func__);
 		return -1;
 	}
-	prp->stats = stats;
+	priv->stats = stats;
 
 	/* Register our new device */
-	netif_carrier_off(prp_dev);		// why?
-	ret = register_netdevice(prp_dev);
+	netif_carrier_off(prp);		// why?
+	ret = register_netdevice(prp);
 	if (ret) {
 		printk("[prp]: %s: registration failed\n", __func__);
 		return ret;
 	}
-	PDEBUG("registered '%s' successfully\n", prp_dev->name);
+	PDEBUG("registered '%s' successfully\n", prp->name);
 
 	/* Set slaves */
-	ret = prp_add_ports(prp, prp_dev, slave, extack);
+	ret = prp_add_ports(priv, prp, slave, extack);
 	if (ret) {
 		printk(KERN_ERR "%s: failed to add ports", __func__);
 		goto err_unregister;
 	}
 
-	dev_set_mtu(prp_dev, prp_get_max_mtu(prp->ports));
+	dev_set_mtu(prp, prp_get_max_mtu(priv->ports));
 
 	/* TODO:
-	 * 	Set timers for supervision and prune
-	 * 	Set up node table
 	 * 	Set up sysfs entry for node table
 	 */
+
+	/* initialise node table */
+	prp_init_node_table(priv);
+
+	mod_timer(&priv->prune_timer,
+			jiffies + msecs_to_jiffies(PRUNE_PERIOD));
 
 	return 0;
 
 err_unregister:
-	unregister_netdevice(prp_dev);
+	unregister_netdevice(prp);
 
 	return ret;
 }
@@ -358,29 +415,48 @@ static void prp_set_operstate(struct net_device *dev, int state)
 }
 
 /**
+ * prp_set_sup_timer - Initialise or delete timer for supervision frame.
+ * 	Initialise timer when state changes from DOWN -> UP
+ * 	Delete time when when state changes from UP -> DOWN
+ */
+void prp_set_sup_timer(struct net_device *prp, unsigned char old_operstate)
+{
+	struct prp_priv *priv = netdev_priv(prp);
+
+	if (prp->operstate == IF_OPER_UP && old_operstate == IF_OPER_DOWN)
+		mod_timer(&priv->sup_timer,
+			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
+	else if (prp->operstate == IF_OPER_DOWN && old_operstate == IF_OPER_DOWN)
+		del_timer(&priv->sup_timer);
+}
+
+/**
  * prp_check_carrier_and_operstate - Set operstate of master after checking
  * 	slaves' state. Set carrier on if atleast one slave is up.
- * @prp_dev: PRP master
+ * @prp: PRP master
  */
-void prp_check_carrier_and_operstate(struct net_device *prp_dev)
+void prp_check_carrier_and_operstate(struct net_device *prp)
 {
-	struct prp_priv *prp = netdev_priv(prp_dev);
-	struct prp_port *ports = prp->ports;
+	struct prp_priv *priv = netdev_priv(prp);
+	struct prp_port *ports = priv->ports;
+	unsigned char old_operstate;
 
 	ASSERT_RTNL();
 
+	old_operstate = prp->operstate;
 	/* netif_carrier_on if atleast one slave is up */
 	if (is_up(ports[0].dev) || is_up(ports[1].dev)) {
-		netif_carrier_on(prp_dev);
-		if (prp_dev->flags && IFF_UP)
-			prp_set_operstate(prp_dev, IF_OPER_UP);
+		netif_carrier_on(prp);
+		if (prp->flags & IFF_UP)
+			prp_set_operstate(prp, IF_OPER_UP);
 		else
-			prp_set_operstate(prp_dev, IF_OPER_DOWN);
+			prp_set_operstate(prp, IF_OPER_DOWN);
 	} else {
-		netif_carrier_off(prp_dev);
-		if (prp_dev->flags && IFF_UP)	/* only slave ("lower layer") is down */
-			prp_set_operstate(prp_dev, IF_OPER_LOWERLAYERDOWN);
+		netif_carrier_off(prp);
+		if (prp->flags & IFF_UP)	/* only slave ("lower layer") is down */
+			prp_set_operstate(prp, IF_OPER_LOWERLAYERDOWN);
 		else
-			prp_set_operstate(prp_dev, IF_OPER_DOWN);
+			prp_set_operstate(prp, IF_OPER_DOWN);
 	}
+	prp_set_sup_timer(prp, old_operstate);
 }

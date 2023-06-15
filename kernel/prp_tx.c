@@ -1,5 +1,6 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <asm/current.h>
 #include "prp_main.h"
 #include "prp_dev.h"
@@ -35,7 +36,7 @@ static inline void prp_rct_set_lan_id(struct prp_rct *rct, u8 lan_id)
 /**
  * Appends and sets the RCT for the frame.
  */
-inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
+inline void prp_add_rct(u8 lan, u16 seqnr, struct sk_buff *skb)
 {
 	struct prp_rct *rct;
 
@@ -46,7 +47,8 @@ inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
 	// 		skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	prp_set_lsdu_size(rct, skb);
 	rct->prp_suffix = htons(PRP_SUFFIX);
-	rct->seqnr = seqnr;
+	rct->seqnr = htons(seqnr);
+	prp_rct_set_lan_id(rct, lan);
 	// PDEBUG("last 6 bytes of skb");
 	// char *tail = (char *)rct + 5;
 	// for (char *p = (char *)rct; p <= tail; p++)
@@ -57,31 +59,49 @@ inline void prp_add_rct(u16 seqnr, struct sk_buff *skb)
 /**
  * TX
  */
-static int prp_prepare_skb(u16 seqnr, struct sk_buff *skb, struct net_device *dev)
+static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
+			   struct net_device *dev)
 {
-	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct ethhdr *ethhdr;
 	unsigned short proto;
 
 	/* Check if skb contains ethhdr */
 	if (skb->mac_len < sizeof(struct ethhdr)) {
-		printk(KERN_ERR "prp_prepare_skb failed, skb does not contain ethhdr");
+		pr_err("prp_prepare_skb failed, skb does not contain ethhdr: %d\n",
+			skb->mac_len);
 		return -EINVAL;
 	}
 
 	ethhdr = (struct ethhdr *)skb_mac_header(skb);
 	proto = ethhdr->h_proto;
 
-	// TODO: Check node table for destination frame
-
-	/* Replace mac address with that of master which should be the same
-	 * as that of the two slaves (both slaves have same MAC address)
-	 */
-	ether_addr_copy(eth_hdr(skb)->h_source, dev->dev_addr);
-	prp_add_rct(seqnr, skb);
+	prp_add_rct(lan, seqnr, skb);
 
 	return 0;
 }
+
+/**
+ * prp_pad_frame - Check if frame is a VLAN and pad accordingly.
+ * 	Called only for DANPs. See section 4.2.7.4.1 of IEC 62439-3:2016 p. 28
+ * @skb: sk_buff received from prp_dev_xmit
+ * @dev: PRP device
+ */
+static int prp_pad_frame(struct sk_buff *skb, struct net_device *dev)
+{
+	int min_size = ETH_ZLEN;	/* 60 octets */
+
+	if (eth_hdr(skb)->h_proto == htons(ETH_P_8021Q))
+		min_size = VLAN_ETH_ZLEN;	/* 64 octets */
+
+	if (skb_put_padto(skb, min_size)) {
+		pr_err("%s: failed to pad frame to %d bytes\n",
+			__func__, min_size);
+		return -1;
+	}
+
+	return 0;
+}
+
 
 /**
  * TX
@@ -92,14 +112,16 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct prp_port *ports = prp_priv->ports;
-	struct prp_rct *rct;
 	struct sk_buff *skb_copy;
 	u16 seqnr;
 
 	PDEBUG("prp_send_skb");
 
+	/* TODO: Check node table and pad only if destination is a DANP */
+	if (prp_pad_frame(skb, dev) < 0)
+		return;
+
 	seqnr = atomic_fetch_add(1, &prp_priv->seqnr) % (1 << 16);
-	barrier();
 	for (int i = 0; i < 2; ++i) {
 		/* Need to copy skb since clone will only clone the skb_buff
 		 * and the refcount will be 1. Tailroom is extended for the RCT.
@@ -117,12 +139,10 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		}
 
 		/* Creates PRP tagged frame */
-		if (prp_prepare_skb(seqnr, skb_copy, dev) < 0)
+		if (prp_prepare_skb(seqnr, ports[i].lan, skb_copy, dev) < 0)
 			return;
 
 		skb_copy->dev = ports[i].dev;
-		rct = prp_get_rct(skb_copy);
-		prp_rct_set_lan_id(rct, ports[i].lan);
 
 		skb_tx_timestamp(skb_copy);
 		if (dev_queue_xmit(skb_copy))
@@ -132,4 +152,116 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 				skb_copy->dev->name);
 	}
 	kfree_skb(skb);
+}
+
+/**
+ * prp_init_skb - Create sk_buff for PRP supervision_frame with ETH header
+ *
+ * @prp: PRP device
+ */
+static struct sk_buff *prp_init_skb(struct net_device *prp)
+{
+	struct sk_buff *skb;
+	struct prp_priv *priv = netdev_priv(prp);
+	int hlen, tlen;
+
+	/* Get needed headroom and tailroom */
+	hlen = LL_RESERVED_SPACE(prp);
+	tlen = prp->needed_tailroom;
+
+	skb = dev_alloc_skb(sizeof(struct prp_sup_tag)
+			    + sizeof(struct prp_sup_payload) + hlen + tlen);
+	if (!skb)
+		return skb;
+
+	/* Reserve headroom for header */
+	skb_reserve(skb, hlen);
+	skb->dev = prp;
+	skb->priority = TC_PRIO_CONTROL;
+
+	/* Create Ethernet header with proto = ETH_P_PRP */
+	if (dev_hard_header(skb, skb->dev, ETH_P_PRP,
+			    priv->sup_multicast_addr,
+			    skb->dev->dev_addr, skb->len) <= 0)
+		goto out;
+
+	// skb_dump(KERN_INFO, skb, false);
+	skb_reset_mac_header(skb);
+	/* Need to set skb->mac_len since prp_prepare_skb checks it.
+	 * How else do I set it? We do not have a network header for this. :/
+	 */
+	skb_set_network_header(skb, skb->len);
+	skb_reset_mac_len(skb);
+	skb_reset_transport_header(skb);
+
+	pr_info("%s: created frame with ETH hdr: mac_len=%d\n", __func__, skb->mac_len);
+	return skb;
+out:
+	pr_err("%s: failed to create frame with ETH hdr\n", __func__);
+	kfree_skb(skb);
+	return NULL;
+}
+
+/**
+ * tag_path_and_ver - Return path_and_ver. Forms the first 16-bits of
+ * payload of the supervision frame.
+ *
+ * @path: SupPath upper 4-bits
+ * @ver: SupVersion lower 12-bits
+ */
+static inline __be16 sup_tag_path_and_ver(unsigned path, unsigned ver)
+{
+	__be16 path_and_ver = 0;
+
+	path_and_ver |= (path & 0xf) << 12;
+	path_and_ver |= (ver & 0xfff);
+
+	return path_and_ver;
+}
+
+/**
+ * prp_send_supervision: Called when priv->prp_sup_timer expires.
+ * 	Send a PRP supervision frame.
+ */
+void prp_send_supervision(struct net_device *prp)
+{
+	struct prp_sup_payload *payload;
+	struct prp_sup_tlv *tlv0;
+	struct prp_sup_tag *tag;
+	struct prp_priv *priv = netdev_priv(prp);
+	struct sk_buff *skb;
+	u16 sup_seqnr;
+
+	skb = prp_init_skb(prp);
+	if (!skb) {
+		WARN_ONCE(1, "PRP: Could not send supervision frame\n");
+		return;
+	}
+
+	/* set up tag after ETH hdr - path, version, and sup_seqnr */
+	tag = skb_put(skb, sizeof(*tag));
+	tag->tag.path_and_ver = ntohs(sup_tag_path_and_ver(PRP_SUP_TAG_PATH,
+						       PRP_SUP_TAG_VERSION));
+	sup_seqnr = atomic_fetch_add(1, &priv->sup_seqnr) & 0xffff;
+	tag->tag.sup_seqnr = htons(sup_seqnr);
+	tag->tlv.type = PRP_TLV_DUPDISCARD;
+	tag->tlv.len = sizeof(*payload);
+
+	/* Set payload - our MAC address */
+	payload = skb_put(skb, sizeof(*payload));
+	ether_addr_copy(payload->mac, prp->dev_addr);
+
+	/* Pad with zeroes. Implicitly sets TLV0 to mark the end.
+	 * TLV0.type = TLV0.len = 0
+	 */
+	if (skb_put_padto(skb, ETH_ZLEN)) {
+		pr_err("%s: failed to pad to %d octets\n", __func__, ETH_ZLEN);
+		return;
+	}
+
+	pr_info("%s: supervision frame set up\n", __func__);
+	// skb_dump(KERN_INFO, skb, false);
+
+	/* duplicate and append RCT */
+	prp_send_skb(skb, prp);
 }
