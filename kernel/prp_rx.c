@@ -138,38 +138,31 @@ out_false:
 	return false;
 }
 
-/**
- * update_node_entry - Initialize some node entry fields.
- * 	Called every time supervision frame is received.
- */
-static void update_node_entry(struct node_entry *node, u8 lan,
-			    bool san_a, bool san_b)
+static inline void node_set_san(struct node_entry *node, struct prp_port *port)
 {
-	/* 0xA & 0x1 = 0, 0xB & 0x1 = 1 */
-	node->time_last_in[lan&0x1] = jiffies;
-	node->san_a = san_a;
-	node->san_b = san_b;
-	/* DANP? */
-	if (!node->san_a && !node->san_b && unlikely(!node->window)) {
-		node->window = kmalloc(sizeof(*(node->window)), GFP_ATOMIC);
-		if (!node->window)
-			pr_warn("%s: failed to allocate window for duplicate discard\n",
-					__func__);
+	/* We should NOT be getting non-PRP frames from the same source
+	 * over both the ports. May need to check for it...
+	 */
+	if (port->lan == 0xA) {
+		node->san_a = true;
+		node->san_b = false;
+	} else {
+		node->san_a = false;
+		node->san_b = true;
 	}
 }
-
 /**
- * prp_handle_supervision_frame - Process supervision frame and update node table.
+ * prp_handle_sup - Process supervision frame and update node table.
  * @skb: sk_buff
+ * @node: Node table entry
  * @port: Port through which we received the skb
  */
-static void prp_handle_supervision_frame(struct sk_buff *skb,
-					 struct prp_port *port)
+static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
+			   struct prp_port *port)
 {
 	struct prp_tag *tag;
 	struct prp_sup_tlv *sup_tlv;
 	struct prp_sup_payload *payload;
-	struct node_entry *node;
 	struct prp_priv *priv = netdev_priv(port->master);
 	unsigned char *source_mac;
 	int mode = 0;	/* duplicate discard or accept */
@@ -190,25 +183,23 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 
 	/* What to do with RedBox MAC? */
 
-	/* Get entry from node table, (RCU READ LOCK?) */
-	// rcu_read_lock();
-	node = prp_get_node(source_mac, priv);
-	if (!node)
-		return;
-	// rcu_read_unlock();
+	ether_addr_copy(node->mac, source_mac);
+	/* node->san_a = node->san_b is set only here.
+	 * If both are false, window has already been allocated.
+	 * But it is possible, that allocation failed.
+	 */
+	if (node->san_a || node->san_b) {
+		node->san_a = node->san_b = false;
+		if (!node->window)
+			node->window = kmalloc(sizeof(*node->window), GFP_ATOMIC);
+		/* maybe delete node if it fails, so that we do not have
+		 * to check if it is not null everytime. */
+		if (!node->window)
+			pr_warn("%s: failed to allocate window", __func__);
+	}
 
-	/* Is a DANP since we received supervision frame */
-	// spin_lock_bh(&priv->node_table_lock);
-	update_node_entry(node, port->lan, false, false);
-	// spin_unlock_bh(&priv->node_table_lock);
-	// synchronize_rcu();
-
-	/* init window */
-	// if (likely(node->window)) {
-	// 	/* set sup_seqnr */
-	// 	atomic_set(&(node->window->sup_seqnr), sup_seqnr);
-	// 	/* set normal sequence number too. */
-	// }
+	if (likely(node->window))
+		node->window->last_jiffies = node->time_last_in[port->lan&0x1];
 
 	return;
 }
@@ -216,17 +207,16 @@ static void prp_handle_supervision_frame(struct sk_buff *skb,
 /**
  * prp_is_duplicate - Return true if frame is duplicate.
  * 	Updates node table.
+ * @skb: socket buff
+ * @node: Node table entry
+ * @port: Port through which @skb was received
  */
-static bool prp_is_duplicate(struct sk_buff *skb, struct prp_port *port)
+static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
+			     struct prp_port *port)
 {
 	return false;
 	/* TODO:
-	 * 	Check if DUPLICATE frame by checking node table
-	 * 		? Do we add to node table if not present?
-	 * 		? Or can we assume that only nodes from which we
-	 * 		  received SUPERVISION frames are DANPs? I.e, if
-	 * 		  node is not in node table, it is a SANP and so we
-	 * 		  need not check if it is a duplicate.
+	 * 	Check if DUPLICATE frame by checking node entry @node
 	 */
 }
 
@@ -280,8 +270,11 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 {
 	struct sk_buff *skb = *pskb;
 	struct net_device *dev = skb->dev;
+	struct prp_priv *priv;
 	struct ethhdr *ethhdr;
 	struct prp_port *port;
+	struct node_entry *node;
+	unsigned char *source_mac;
 	bool is_prp = true;
 
 	// PDEBUG("%s:%s: PID=%d", __func__, dev->name, current->pid);
@@ -307,6 +300,8 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	if (!port)
 		goto finish_pass;
 
+	priv = netdev_priv(port->master);
+
 	// PDEBUG("%s: mac_header=%d, network_header=%d", __func__, skb->mac_header,
 	// 	skb->network_header);
 	skb_push(skb, ETH_HLEN);
@@ -315,22 +310,41 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 
 	skb->dev = port->master;
 
-	/* Processing starts here */
+	source_mac = eth_hdr(skb)->h_source;
+	/* Unlock only at the end. */
+	write_lock(&priv->node_table_lock);
+	/* Get node table entry creating one if it does not exist. */
+	node = prp_get_node(source_mac, priv);
+	/* Create entry? */
+	if (!node) {
+		/* NOTE: if this is a supervision frame, prp_handle_sup will
+		 * replace the MAC address with the one in the supervision
+		 * frame's payload. */
+		node = prp_add_node(source_mac, priv);
+		if (!node) {
+			pr_warn("%s: cannot add node to node table\n", __func__);
+			goto finish_pass;
+		}
+	}
+	node->time_last_in[port->lan&0x1] = jiffies;
+
+	/* Not a PRP frame */
 	if (!valid_rct(skb, port)) {
+		node_set_san(node, port);
 		is_prp = false;
 		PDEBUG("%s: PID=%d: not PRP-tagged frame\n", __func__, current->pid);
 		goto forward_upper;
 	}
 
-	if (is_supervision_frame(skb, netdev_priv(port->master))) {
+	if (is_supervision_frame(skb, priv)) {
 		unsigned char *mac = eth_hdr(skb)->h_source;
 		pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
 			__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-		prp_handle_supervision_frame(skb, port);
+		prp_handle_sup(skb, node, port);
 		goto finish_consumed;
 	}
 
-	if (prp_is_duplicate(skb, port)) {
+	if (prp_is_duplicate(skb, node, port)) {
 		kfree_skb(skb);
 		goto finish_consumed;
 	}
