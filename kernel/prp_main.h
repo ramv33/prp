@@ -57,7 +57,7 @@ struct prp_port {
  * TODO
  * @sup_seqnr_in: Sequence number for last supervision frame received.
  * @last_jiffies: When did the latest frame in the window arrive.
- * 		  Use time_last_in instead?
+ * 		  Should be max(time_last_in[A], time_last_in[B])
  */
 struct window {
 	atomic_t	sup_seqnr_in;
