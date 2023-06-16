@@ -262,6 +262,7 @@ void prp_send_supervision(struct net_device *prp)
 	pr_info("%s: supervision frame set up\n", __func__);
 	// skb_dump(KERN_INFO, skb, false);
 
+	/* TODO: get entry from node table and check if SAN */
 	/* duplicate and append RCT */
 	prp_send_skb(skb, prp);
 }
