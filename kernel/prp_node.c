@@ -145,6 +145,7 @@ void prp_prune_nodes(struct timer_list *t)
 		}
 	}
 	write_unlock_bh(&priv->node_table_lock);
+	pr_info("%s done\n", __func__);
 
 	mod_timer(&priv->prune_timer, jiffies + msecs_to_jiffies(PRUNE_PERIOD));
 }
