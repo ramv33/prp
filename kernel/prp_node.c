@@ -89,7 +89,7 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 	key = hash_mac(mac, HASH_SIZE(priv->node_table));
 
 	/* Add node to list here */
-	hash_add(priv->node_table, &newnode->list, key);
+	hlist_add_head(&newnode->list, &(priv->node_table[key]));
 
 	return newnode;
 }
