@@ -356,6 +356,8 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 	atomic_set(&priv->sup_seqnr, 0);
 	atomic_set(&priv->seqnr, 0);
 
+	rwlock_init(&priv->node_table_lock);
+
 	timer_setup(&priv->sup_timer, prp_sup_timer, 0);
 	timer_setup(&priv->prune_timer, prp_prune_nodes, 0);
 
