@@ -153,6 +153,7 @@ static inline void node_set_san(struct node_entry *node, struct prp_port *port)
 }
 /**
  * prp_handle_sup - Process supervision frame and update node table.
+ * 	Caller must hold the WRITE lock
  * @skb: sk_buff
  * @node: Node table entry
  * @port: Port through which we received the skb
