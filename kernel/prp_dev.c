@@ -310,6 +310,7 @@ static void prp_dump_node_table(struct prp_priv *priv)
 	struct node_entry *curr;
 	int i;
 
+	pr_info("%s\n", __func__);
 	read_lock(&priv->node_table_lock);
 	hash_for_each(priv->node_table, i, curr, list) {
 		unsigned char *mac = curr->mac;
@@ -319,6 +320,7 @@ static void prp_dump_node_table(struct prp_priv *priv)
 			curr->san_a, curr->san_b);
 	}
 	read_unlock(&priv->node_table_lock);
+	pr_info("%s done\n", __func__);
 }
 
 static void prp_sup_timer(struct timer_list *t)
