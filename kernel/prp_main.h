@@ -53,13 +53,33 @@ struct prp_port {
 
 
 /**
+ * struct win_timestamp - to store the timestamp for each frame in window.
+ *
+ * @time: jiffies at which the frame with given sequence number arrived.
+ * @seqnr: Sequence number of frame. We use linear search.
+ */
+struct win_timestamp {
+	unsigned long	time;
+	u16		seqnr;
+};
+
+/**
  * struct window - to implement the duplicate discard.
  * TODO
+ * @start: Start of the sliding window, i.e, lsb in win represents this seqnr.
+ * @end: End of the sliding window, inclusive.
+ * @win: The sliding window implemented using a bitmap.
+ * @win_ts: Timestamp for each frame in the window marked received.
  * @last_jiffies: When did the latest frame in the window arrive.
  * 		  Should be max(time_last_in[A], time_last_in[B])
  */
 struct window {
-	unsigned long	last_jiffies;
+	atomic_t		start;
+	atomic_t		end;
+#define PRP_WINDOW_SIZE	64
+	DECLARE_BITMAP(win, PRP_WINDOW_SIZE);	/* window is a bitmap */
+	struct win_timestamp	win_ts[PRP_WINDOW_SIZE];
+	unsigned long		last_jiffies;
 };
 
 /**
