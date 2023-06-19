@@ -193,8 +193,11 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 			node->window = kmalloc(sizeof(*node->window), GFP_ATOMIC);
 		/* maybe delete node if it fails, so that we do not have
 		 * to check if it is not null everytime. */
-		if (!node->window)
+		if (unlikely(!node->window)) {
 			pr_warn("%s: failed to allocate window", __func__);
+		} else {
+			init_window(node->window);
+		}
 	}
 
 	if (likely(node->window))
