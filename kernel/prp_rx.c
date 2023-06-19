@@ -149,6 +149,8 @@ static inline void node_set_san(struct node_entry *node, struct prp_port *port)
 		node->san_b = true;
 	}
 }
+
+
 /**
  * prp_handle_sup - Process supervision frame and update node table.
  * 	Caller must hold the WRITE lock
