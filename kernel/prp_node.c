@@ -89,7 +89,7 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv)
 	spin_lock(&priv->node_table_lock);
 
 	/* Add node to list here */
-	hash_add_rcu(priv->node_table, &newnode->list, key);
+	hlist_add_head_rcu(&newnode->list, &(priv->node_table[key]));
 
 	spin_unlock(&priv->node_table_lock);
 
