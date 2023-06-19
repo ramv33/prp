@@ -65,7 +65,7 @@ struct win_timestamp {
 
 /**
  * struct window - to implement the duplicate discard.
- * TODO
+ * 	.start = .end = 0 on initialization (see prp_node.c:init_window).
  * @start: Start of the sliding window, i.e, lsb in win represents this seqnr.
  * @end: End of the sliding window, inclusive.
  * @win: The sliding window implemented using a bitmap.
