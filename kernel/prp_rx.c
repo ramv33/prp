@@ -209,6 +209,34 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 }
 
 /**
+ * window_register_frame - Update window and return true if duplicate.
+ * @win: Window.
+ * @seqnr: Sequence number of incoming frame.
+ */
+static bool window_register_frame(struct window *win, u16 seqnr)
+{
+	/* 
+	 * if (win->start == win->end || win->last_jiffies < (jiffies-400)) {
+	 * 	win->end = seqnr
+	 * 	win->start = win->end - WIN_SIZE + 1
+	 *	bitmap_set(i, win->win)
+	 *	set win_ts, first position.
+	 * } else {
+	 * 	i = (seqnr - win->start) % 2^16	
+	 * 	if (i >= WINSIZE) {
+	 *		shifamt = i - WINSIZE + 1
+	 *		win->win >>= shiftamt
+	 *		win->start += shifamt mod 2^16
+	 *		win->end = seqnr
+	 *		i = WINSIZE-1;
+	 *	}
+	 *	bitmap_set(i, win->win)
+	 * }
+	 */
+	return false;
+}
+
+/**
  * prp_is_duplicate - Return true if frame is duplicate.
  * 	Updates node table.
  * @skb: socket buff
@@ -228,10 +256,7 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 	pr_info("%s: source=%02x:%02x:%02x:%02x:%02x:%02x, node@%p\n", __func__,
 		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], node);
 
-	return false;
-	/* TODO:
-	 * 	Check if DUPLICATE frame by checking node entry @node
-	 */
+	return window_register_frame(node->window, ntohs(rct->seqnr));
 }
 
 /**
