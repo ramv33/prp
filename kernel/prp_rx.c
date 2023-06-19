@@ -167,8 +167,6 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 	int mode = 0;	/* duplicate discard or accept */
 	u16 sup_seqnr;
 
-	pr_info("%s: handled supervision frame\n", __func__);
-
 	/* No need to check if we can pull since is_supervision_frame() did */
 	tag = skb_pull(skb, sizeof(struct ethhdr));
 	sup_seqnr = tag->sup_seqnr;
@@ -199,6 +197,8 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 
 	if (likely(node->window))
 		node->window->last_jiffies = node->time_last_in[port->lan&0x1];
+
+	pr_info("%s: handled supervision frame\n", __func__);
 
 	return;
 }

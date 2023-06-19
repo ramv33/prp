@@ -129,7 +129,6 @@ void prp_prune_nodes(struct timer_list *t)
 	struct node_entry *node;
 	unsigned long time_a, time_b;
 
-	pr_info("%s: pruning\n", __func__);
 	write_lock_bh(&priv->node_table_lock);
 	for (int i = 0; i < NODETABLE_SIZE; i++) {
 		hlist_for_each_entry_safe(node, tmp, &priv->node_table[i],
@@ -146,7 +145,6 @@ void prp_prune_nodes(struct timer_list *t)
 		}
 	}
 	write_unlock_bh(&priv->node_table_lock);
-	pr_info("%s done\n", __func__);
 
 	mod_timer(&priv->prune_timer, jiffies + msecs_to_jiffies(PRUNE_PERIOD));
 }
