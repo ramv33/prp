@@ -222,11 +222,6 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 	rct = prp_get_rct(skb);
 	pr_info("%s: seqnr=%d\n", __func__, ntohs(rct->seqnr));
 
-	mac = eth_hdr(skb)->h_source;
-	node = prp_get_node(mac);
-	pr_info("%s: source=%02x:%02x:%02x:%02x:%02x:%02x, node@%p\n", __func__,
-		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], node);
-
 	return false;
 	/* TODO:
 	 * 	Check if DUPLICATE frame by checking node entry @node
