@@ -68,8 +68,6 @@ static bool is_supervision_frame(struct sk_buff *skb, struct prp_priv *priv)
 	struct prp_sup_payload *payload;
 	int pulled = 0;
 
-	skb_dump(KERN_ERR, skb, true);
-
 	WARN_ON_ONCE(!skb_mac_header_was_set(skb));
 	ethhdr = eth_hdr(skb);
 
