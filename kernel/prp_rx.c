@@ -215,6 +215,12 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 			     struct prp_port *port)
 {
+	/* get rct */
+	struct prp_rct *rct;
+
+	rct = prp_get_rct(skb);
+	pr_info("%s: seqnr=%d\n", __func__, ntohs(rct->seqnr));
+
 	return false;
 	/* TODO:
 	 * 	Check if DUPLICATE frame by checking node entry @node
