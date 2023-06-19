@@ -74,12 +74,12 @@ struct win_timestamp {
  * 		  Should be max(time_last_in[A], time_last_in[B])
  */
 struct window {
-	atomic_t		start;
-	atomic_t		end;
 #define PRP_WINDOW_SIZE	64
 	DECLARE_BITMAP(win, PRP_WINDOW_SIZE);	/* window is a bitmap */
 	struct win_timestamp	win_ts[PRP_WINDOW_SIZE];
 	unsigned long		last_jiffies;
+	u16			start;
+	u16			end;
 };
 
 /**
