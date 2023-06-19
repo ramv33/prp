@@ -222,4 +222,19 @@ static inline int prp_get_lan_id(struct prp_rct *rct)
 
 }
 
+/**
+ * init_window - Initialise the drop window.
+ * 		 Set .start = .end = 0, to mark an empty window.
+ * 		 Zero out the window bitmap (.win). No need to zero .win_ts
+ * 		 since it is only checked if the bit is set in the window.
+ * @win: Window
+ */
+static void init_window(struct window *win)
+{
+	win->start = win->end = 0;
+	bitmap_zero(win->win, PRP_WINDOW_SIZE);
+	/* no need to zero .win_ts */
+	win->last_jiffies = 0;
+}
+
 #endif /* PRP_MAIN_H */
