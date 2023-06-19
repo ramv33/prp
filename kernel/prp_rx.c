@@ -214,7 +214,6 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 			     struct prp_port *port)
 {
 	struct prp_rct *rct;
-	struct node_entry *node;
 	unsigned char *mac;
 
 	rct = prp_get_rct(skb);
