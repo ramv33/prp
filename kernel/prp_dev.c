@@ -428,7 +428,7 @@ void prp_set_sup_timer(struct net_device *prp, unsigned char old_operstate)
 	if (prp->operstate == IF_OPER_UP && old_operstate == IF_OPER_DOWN)
 		mod_timer(&priv->sup_timer,
 			  jiffies + msecs_to_jiffies(LIFE_CHECK_INTERVAL));
-	else if (prp->operstate == IF_OPER_DOWN && old_operstate == IF_OPER_DOWN)
+	else if (prp->operstate == IF_OPER_DOWN && old_operstate == IF_OPER_UP)
 		del_timer(&priv->sup_timer);
 }
 
