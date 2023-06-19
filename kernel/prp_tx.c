@@ -194,7 +194,6 @@ static struct sk_buff *prp_init_skb(struct net_device *prp)
 	skb_reset_mac_len(skb);
 	skb_reset_transport_header(skb);
 
-	pr_info("%s: created frame with ETH hdr: mac_len=%d\n", __func__, skb->mac_len);
 	return skb;
 out:
 	pr_err("%s: failed to create frame with ETH hdr\n", __func__);
