@@ -127,7 +127,8 @@ void prp_prune_nodes(struct timer_list *t)
 	struct prp_priv *priv = from_timer(priv, t, prune_timer);
 	struct hlist_node *tmp;
 	struct node_entry *node;
-	unsigned long time_a, time_b;
+	unsigned long time_a, time_b, time;
+	unsigned long now = jiffies;
 
 	write_lock_bh(&priv->node_table_lock);
 	for (int i = 0; i < NODETABLE_SIZE; i++) {
@@ -135,10 +136,14 @@ void prp_prune_nodes(struct timer_list *t)
 					  list) {
 			time_a = node->time_last_in[0];
 			time_b = node->time_last_in[1];
-			/* Remove from list if last frame from node was received
-			 * longer than NODE_FORGET_TIME ago.
-			 */
-			if (false /* condition here */) {
+			/* calculate time when the entry becomes stale */
+			time = max(time_a, time_b) + msecs_to_jiffies(NODE_FORGET_TIME);
+			/* is that time before now? */
+			if (time_before(time, now)) {
+				pr_info("pruned node with mac="
+					"%02x:%02x:%02x:%02x:%02x:%02x\n",
+					node->mac[0], node->mac[1], node->mac[2],
+					node->mac[3], node->mac[4], node->mac[5]);
 				hlist_del(&node->list);
 				free_node(node);
 			}
