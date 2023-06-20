@@ -209,12 +209,46 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 }
 
 /**
- * window_register_frame - Update window and return true if duplicate.
- * @win: Window.
+ * register_frame - Update window and return true if duplicate.
+ * @node: Node entry.
  * @seqnr: Sequence number of incoming frame.
+ * @lan: Port through which we received this frame.
  */
-static bool window_register_frame(struct window *win, u16 seqnr)
+static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 {
+	struct window *win = node->window;
+	unsigned long now = jiffies;
+	u16 i;
+
+	/* if empty or old window, we reset the window */
+	if (win->start == win->end
+		|| time_after(win->last_jiffies, jiffies - msecs_to_jiffies(ENTRY_FORGET_TIME))) {
+		i = PRP_WINDOW_SIZE - 1;
+		win->end = seqnr;
+		win->start = win->end - PRP_WINDOW_SIZE + 1;
+		bitmap_set(win->win, i, PRP_WINDOW_SIZE);
+		/* set win_ts, first entry in it to jiffies*/
+	} else {
+		/* check if within window
+		 * 	check if marked received - is bit set?
+		 * 		if win_ts[seqnr] older
+		 * 			ret = false
+		 * 		else
+		 * 			ret = true
+		 * 	else
+		 * 		ret = false
+		 * 		mark bit as set
+		 *		win_ts[seqnr] = now
+		 * check if outside window
+		 * 	shift right
+		 * 	win->end = seqnr
+		 * 	win->start = seqnr - WIN_SIZE + 1
+		 * 	mark WIN_SIZE-1 as marked
+		 */
+	}
+
+	win->last_jiffies = now;
+	node->time_last_in[lan&0x1] = now;
 	/* 
 	 * if (win->start == win->end || win->last_jiffies < (jiffies-400)) {
 	 * 	win->end = seqnr
@@ -256,7 +290,7 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 	pr_info("%s: source=%02x:%02x:%02x:%02x:%02x:%02x, node@%p\n", __func__,
 		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], node);
 
-	return window_register_frame(node->window, ntohs(rct->seqnr));
+	return register_frame(node, ntohs(rct->seqnr), port->lan);
 }
 
 /**
