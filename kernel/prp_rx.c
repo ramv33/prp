@@ -203,7 +203,6 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 	if (likely(node->window))
 		node->window->last_jiffies = node->time_last_in[port->lan&0x1];
 
-	pr_info("%s: handled supervision frame\n", __func__);
 
 	return;
 }
@@ -411,8 +410,8 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 
 	if (is_supervision_frame(skb, priv)) {
 		unsigned char *mac = eth_hdr(skb)->h_source;
-		pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
-			__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+		// pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
+		// 	__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		prp_handle_sup(skb, node, port);
 		goto finish_consumed;
 	}
