@@ -53,33 +53,16 @@ struct prp_port {
 
 
 /**
- * struct win_timestamp - to store the timestamp for each frame in window.
- *
+ * struct win_timestamp - To store the timestamp for each frame in window.
+ * 	We use linear search. Empty entry is marked by seqnr=-1.
+ * 	There will NOT be any empty entry after the first PRP_WINDOW_SIZE
+ * 	frames are received.
  * @time: jiffies at which the frame with given sequence number arrived.
  * @seqnr: Sequence number of frame. We use linear search.
  */
-struct win_timestamp {
-	unsigned long	time;
-	u16		seqnr;
-};
-
-/**
- * struct window - to implement the duplicate discard.
- * 	.start = .end = 0 on initialization (see prp_node.c:init_window).
- * @start: Start of the sliding window, i.e, lsb in win represents this seqnr.
- * @end: End of the sliding window, inclusive.
- * @win: The sliding window implemented using a bitmap.
- * @win_ts: Timestamp for each frame in the window marked received.
- * @last_jiffies: When did the latest frame in the window arrive.
- * 		  Should be max(time_last_in[A], time_last_in[B])
- */
 struct window {
-#define PRP_WINDOW_SIZE	64
-	DECLARE_BITMAP(win, PRP_WINDOW_SIZE);	/* window is a bitmap */
-	struct win_timestamp	win_ts[PRP_WINDOW_SIZE];
-	unsigned long		last_jiffies;
-	u16			start;
-	u16			end;
+	unsigned long	time;
+	int		seqnr;
 };
 
 /**
@@ -91,6 +74,7 @@ struct node_entry {
 	unsigned char		mac[ETH_ALEN];
 	/* time the last frame arrived through the ports */
 	unsigned long		time_last_in[2];
+#define PRP_WINDOW_SIZE	32
 	struct window		*window;
 	bool			san_a;
 	bool			san_b;
@@ -220,21 +204,6 @@ static inline int prp_get_lan_id(struct prp_rct *rct)
 {
 	return (ntohs(rct->lan_id_and_lsdu_size) & 0xf000) >> 12;
 
-}
-
-/**
- * init_window - Initialise the drop window.
- * 		 Set .start = .end = 0, to mark an empty window.
- * 		 Zero out the window bitmap (.win). No need to zero .win_ts
- * 		 since it is only checked if the bit is set in the window.
- * @win: Window
- */
-static void init_window(struct window *win)
-{
-	win->start = win->end = 0;
-	bitmap_zero(win->win, PRP_WINDOW_SIZE);
-	/* no need to zero .win_ts */
-	win->last_jiffies = 0;
 }
 
 #endif /* PRP_MAIN_H */
