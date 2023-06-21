@@ -41,6 +41,7 @@ static inline struct prp_port *get_rx_handler_data(struct net_device *dev)
  */
 static void init_window(struct window *win)
 {
+	pr_info("%s\n", __func__);
 	/* use memset(0xff)? */
 	for (int i = 0; i < PRP_WINDOW_SIZE; i++)
 		win[i].seqnr = -1;
