@@ -227,7 +227,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 {
 	struct window *win = node->window;
 	unsigned long now = jiffies;
-	unsigned long oldest;
+	unsigned long oldest, too_old;
 	bool is_dupe;
 	int oi;		/* Index of oldest entry; used for replacement. */
 	int size, i;
@@ -251,8 +251,12 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 			is_dupe = false;
 		} else {
 			/* found it */
+			too_old = now - msecs_to_jiffies(ENTRY_FORGET_TIME);
+			if (time_before(win[i].time, too_old))
+				is_dupe = false;
+			else
+				is_dupe = true;
 			win[i].time = now;
-			is_dupe = true;
 		}
 	} else {
 		/* replace oldest entry */
