@@ -227,56 +227,44 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 {
 	struct window *win = node->window;
 	unsigned long now = jiffies;
-	u16 i;
+	unsigned long oldest;
+	bool is_dupe;
+	int oi;		/* Index of oldest entry; used for replacement. */
+	int size, i;
 
-	/* if empty or old window, we reset the window */
-	if (win->start == win->end
-		|| time_after(win->last_jiffies, jiffies - msecs_to_jiffies(ENTRY_FORGET_TIME))) {
-		i = PRP_WINDOW_SIZE - 1;
-		win->end = seqnr;
-		win->start = win->end - PRP_WINDOW_SIZE + 1;
-		bitmap_set(win->win, i, PRP_WINDOW_SIZE);
-		/* set win_ts, first entry in it to jiffies*/
+	oldest = now;
+	size = PRP_WINDOW_SIZE;
+	for (i = 0; i < size; i++) {
+		/* found the entry with seqnr, or an empty space */
+		if (win[i].seqnr == seqnr || unlikely(win[i].seqnr == -1))
+			break;
+		if (time_before(win[i].time, oldest)) {
+			oi = i;
+			oldest = win[i].time;
+		}
+	}
+	if (i < size) {
+		if (unlikely(win[i].seqnr == -1)) {
+			/* found free space */
+			win[i].seqnr = seqnr;
+			win[i].time = now;
+			is_dupe = false;
+		} else {
+			/* found it */
+			win[i].time = now;
+			is_dupe = true;
+		}
 	} else {
-		/* check if within window
-		 * 	check if marked received - is bit set?
-		 * 		if win_ts[seqnr] older
-		 * 			ret = false
-		 * 		else
-		 * 			ret = true
-		 * 	else
-		 * 		ret = false
-		 * 		mark bit as set
-		 *		win_ts[seqnr] = now
-		 * check if outside window
-		 * 	shift right
-		 * 	win->end = seqnr
-		 * 	win->start = seqnr - WIN_SIZE + 1
-		 * 	mark WIN_SIZE-1 as marked
-		 */
+		/* replace oldest entry */
+		win[oi].time = now;
+		win[oi].seqnr = jiffies;
+		is_dupe = false;
 	}
 
-	win->last_jiffies = now;
+	// node->window->last_jiffies = now;
 	node->time_last_in[lan&0x1] = now;
-	/* 
-	 * if (win->start == win->end || win->last_jiffies < (jiffies-400)) {
-	 * 	win->end = seqnr
-	 * 	win->start = win->end - WIN_SIZE + 1
-	 *	bitmap_set(i, win->win)
-	 *	set win_ts, first position.
-	 * } else {
-	 * 	i = (seqnr - win->start) % 2^16	
-	 * 	if (i >= WINSIZE) {
-	 *		shifamt = i - WINSIZE + 1
-	 *		win->win >>= shiftamt
-	 *		win->start += shifamt mod 2^16
-	 *		win->end = seqnr
-	 *		i = WINSIZE-1;
-	 *	}
-	 *	bitmap_set(i, win->win)
-	 * }
-	 */
-	return false;
+
+	return is_dupe;
 }
 
 /**
