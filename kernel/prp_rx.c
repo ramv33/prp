@@ -349,6 +349,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	struct ethhdr *ethhdr;
 	struct prp_port *port;
 	struct node_entry *node;
+	unsigned long now = jiffies;
 	unsigned char *source_mac;
 	bool is_prp = true;
 
@@ -401,7 +402,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 			goto finish_pass;
 		}
 	}
-	node->time_last_in[port->lan&0x1] = jiffies;
+	node->time_last_in[port->lan&0x1] = now;
 
 	/* Not a PRP frame */
 	if (!valid_rct(skb, port)) {
