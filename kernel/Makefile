@@ -12,7 +12,7 @@ all:
 	make -C /lib/modules/$(KVERSION)/build M=$(PWD) modules
 clean:
 	make -C /lib/modules/$(KVERSION)/build M=$(PWD) clean
-	rm -vf mkprp
+	rm -vf mkprp.out
 
 mkprp:	mkprp.c
 	$(CC) mkprp.c -o mkprp.out -I /usr/include/libnl3 -lnl-3 -lnl-genl-3 -g
