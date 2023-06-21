@@ -13,4 +13,9 @@ struct node_entry *prp_add_node(unsigned char *mac, struct prp_priv *priv);
 
 struct node_entry *prp_get_node(unsigned char *mac, struct prp_priv *priv);
 
+static inline struct window *alloc_window(int winsize)
+{
+	return kmalloc(sizeof(struct window) * winsize, GFP_ATOMIC);
+}
+
 #endif /* __PRP_NODE */

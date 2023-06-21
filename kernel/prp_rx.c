@@ -163,12 +163,6 @@ static inline void node_set_san(struct node_entry *node, struct prp_port *port)
 	}
 }
 
-
-static inline struct window *alloc_window(int winsize)
-{
-	return kmalloc(sizeof(struct window) * winsize, GFP_ATOMIC);
-}
-
 /**
  * prp_handle_sup - Process supervision frame and update node table.
  * 	Caller must hold the WRITE lock
@@ -204,10 +198,9 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 	 * If both are false, window has already been allocated.
 	 * But it is possible, that allocation failed.
 	 */
-	if (node->san_a || node->san_b) {
-		node->san_a = node->san_b = false;
-		if (!node->window)
-			node->window = alloc_window(PRP_WINDOW_SIZE);
+	node->san_a = node->san_b = false;
+	if (!node->window) {
+		node->window = alloc_window(PRP_WINDOW_SIZE);
 		/* maybe delete node if it fails, so that we do not have
 		 * to check if it is not null everytime. */
 		if (unlikely(!node->window)) {
