@@ -238,6 +238,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 	int oi;		/* Index of oldest entry; used for replacement. */
 	int size, i;
 
+	pr_info("%s begun\n", __func__);
 	oldest = now;
 	size = PRP_WINDOW_SIZE;
 	for (i = 0; i < size; i++) {
@@ -249,6 +250,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 			oldest = win[i].time;
 		}
 	}
+	pr_info("%s: finished search, i=%d\n", __func__, i);
 	if (i < size) {
 		if (unlikely(win[i].seqnr == -1)) {
 			/* found free space */
