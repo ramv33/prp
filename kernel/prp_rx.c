@@ -164,7 +164,6 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 	struct prp_tag *tag;
 	struct prp_sup_tlv *sup_tlv;
 	struct prp_sup_payload *payload;
-	struct prp_priv *priv = netdev_priv(port->master);
 	unsigned char *source_mac;
 	int mode = 0;	/* duplicate discard or accept */
 	u16 sup_seqnr;
@@ -409,7 +408,7 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	}
 
 	if (is_supervision_frame(skb, priv)) {
-		unsigned char *mac = eth_hdr(skb)->h_source;
+		// unsigned char *mac = eth_hdr(skb)->h_source;
 		// pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
 		// 	__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		prp_handle_sup(skb, node, port);

@@ -225,7 +225,6 @@ static inline __be16 sup_tag_path_and_ver(unsigned path, unsigned ver)
 void prp_send_supervision(struct net_device *prp)
 {
 	struct prp_sup_payload *payload;
-	struct prp_sup_tlv *tlv0;
 	struct prp_sup_tag *tag;
 	struct prp_priv *priv = netdev_priv(prp);
 	struct sk_buff *skb;

@@ -33,7 +33,6 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 	 * 	MTU change
 	 * 	Unregister
 	 */
-	char *name = dev->name;
 	if (!is_prp_master(dev))
 		return NOTIFY_DONE;
 	switch (event) {
