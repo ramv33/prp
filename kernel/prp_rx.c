@@ -252,8 +252,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 		is_dupe = false;
 	}
 
-	pr_info("%s: seqnr=%d, lan=%x, dupe=%d\n", __func__, seqnr, lan, is_dupe);
-	// node->window->last_jiffies = now;
+	PDEBUG("%s: seqnr=%d, lan=%x, dupe=%d\n", __func__, seqnr, lan, is_dupe);
 	node->time_last_in[lan&0x1] = now;
 
 	return is_dupe;
