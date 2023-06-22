@@ -102,6 +102,29 @@ static int prp_pad_frame(struct sk_buff *skb, struct net_device *dev)
 	return 0;
 }
 
+static void send_san(struct sk_buff *skb, struct prp_priv *priv,
+		     bool san_a, bool san_b)
+{
+	struct prp_port *ports = priv->ports;
+	struct sk_buff *skb_clone;
+
+	skb_clone = skb_clone(skb, GFP_ATOMIC);
+	if (!skb_clone) {
+		pr_err("%s: skb_clone failed\n");
+		break;
+	}
+
+	if (san_a)
+		skb_copy->dev = ports[0].dev;
+	else
+		skb_copy->dev = ports[1].dev;
+
+	skb_tx_timestamp(skb_copy);
+	if (dev_queue_xmit(skb_copy))
+		netdev_warn(dev, "failed to send to san_%x\n", san_a ? 0xA : 0xB);
+
+	kfree_skb(skb);
+}
 
 /**
  * TX
@@ -112,12 +135,25 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 {
 	struct prp_priv *prp_priv = netdev_priv(dev);
 	struct prp_port *ports = prp_priv->ports;
+	struct node_entry *node;
 	struct sk_buff *skb_copy;
+	unsigned char *mac = eth_hdr(skb)->h_dest;
 	u16 seqnr;
 
 	PDEBUG("prp_send_skb");
 
-	/* TODO: Check node table and pad only if destination is a DANP */
+	read_lock(&prp_priv->node_table_lock);
+	node = prp_get_node(mac, prp_priv);
+	if (node) {
+		/* Both false => DANP. Both true => new entry */
+		if (node->san_a ^ node->san_b) {
+			read_unlock(&prp_priv->node_table_lock);
+			send_san(skb, prp_priv, node->san_a, node->san_b);
+			return;
+		}
+	}
+	read_unlock(&prp_priv->node_table_lock);
+
 	if (prp_pad_frame(skb, dev) < 0)
 		return;
 
