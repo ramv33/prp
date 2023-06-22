@@ -398,16 +398,16 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 		goto forward_upper;
 	}
 
+	if (prp_is_duplicate(skb, node, port)) {
+		kfree_skb(skb);
+		goto finish_consumed;
+	}
+
 	if (is_supervision_frame(skb, priv)) {
 		// unsigned char *mac = eth_hdr(skb)->h_source;
 		// pr_info("%s: supervision frame from %08x:%08x:%08x:%08x:%08x:%08x\n",
 		// 	__func__, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		prp_handle_sup(skb, node, port);
-		goto finish_consumed;
-	}
-
-	if (prp_is_duplicate(skb, node, port)) {
-		kfree_skb(skb);
 		goto finish_consumed;
 	}
 
