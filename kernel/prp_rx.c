@@ -307,7 +307,7 @@ static void prp_net_if(bool prp, struct sk_buff *skb, struct net_device *dev)
 
 	clone_skb = skb_clone(skb, GFP_ATOMIC);
 	if (!clone_skb) {
-		PDEBUG("%s: skb_clone returned NULL, not forwarding\n", __func__);
+		pr_warn("%s: skb_clone returned NULL, not forwarding\n", __func__);
 		return;
 	}
 
@@ -316,10 +316,9 @@ static void prp_net_if(bool prp, struct sk_buff *skb, struct net_device *dev)
 	len = clone_skb->len;
 	res = netif_rx(clone_skb);
 	if (res == NET_RX_DROP) {
-		PDEBUG("%s:%s: netif_rx DROPPED\n", __func__, dev->name);
+		pr_warn("%s:%s: netif_rx DROPPED\n", __func__, dev->name);
 		/* TODO: Update stats */
 	} else {
-		PDEBUG("%s:%s: netif_rx SUCCESS\n", __func__, dev->name);
 		/* TODO: Update stats */
 	}
 }
@@ -356,11 +355,9 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 
 	ethhdr = eth_hdr(skb);
 	if (!ethhdr) {
-		PDEBUG("%s: eth_hdr() return NULL", __func__);
+		pr_warn("%s: eth_hdr() return NULL", __func__);
 		return RX_HANDLER_PASS;
 	}
-	PDEBUG("%s: dev='%s': PID=%d: eth_hdr->proto = 0x%x", __func__,
-		dev->name, current->pid, ntohs(ethhdr->h_proto));
 
 	port =  get_rx_handler_data(dev);
 	if (!port)
@@ -398,7 +395,6 @@ rx_handler_result_t prp_recv_frame(struct sk_buff **pskb)
 	if (!valid_rct(skb, port)) {
 		node_set_san(node, port);
 		is_prp = false;
-		PDEBUG("%s: PID=%d: not PRP-tagged frame\n", __func__, current->pid);
 		goto forward_upper;
 	}
 
