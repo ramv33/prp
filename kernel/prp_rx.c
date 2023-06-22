@@ -286,7 +286,9 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 
 static void strip_rct(struct sk_buff *skb)
 {
+	skb_dump(KERN_ERR, skb, false);
 	skb_trim(skb, skb->len - PRP_RCTLEN);
+	skb_dump(KERN_ERR, skb, false);
 }
 
 /**
