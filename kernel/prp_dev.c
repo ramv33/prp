@@ -331,7 +331,7 @@ static void prp_sup_timer(struct timer_list *t)
 	/* for debugging */
 #ifdef PRP_DEBUG
 	prp_dump_node_table(priv);
-#endif PRP_DEBUG
+#endif
 
 	prp_send_supervision(prp);
 	/* Reset timer */
