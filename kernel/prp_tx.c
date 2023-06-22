@@ -5,6 +5,7 @@
 #include "prp_main.h"
 #include "prp_dev.h"
 #include "prp_tx.h"
+#include "prp_node.h"
 #include "debug.h"
 
 
