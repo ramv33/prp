@@ -35,19 +35,6 @@ static inline struct prp_port *get_rx_handler_data(struct net_device *dev)
 }
 
 /**
- * init_window - Initialise the drop window.
- *		 Set .seqnr = -1 for all.
- * @win: Window
- */
-static void init_window(struct window *win)
-{
-	pr_info("%s\n", __func__);
-	/* use memset(0xff)? */
-	for (int i = 0; i < PRP_WINDOW_SIZE; i++)
-		win[i].seqnr = -1;
-}
-
-/**
  * valid_rct - Return true if skb has a valid PRP RCT
  */
 bool valid_rct(struct sk_buff *skb, struct prp_port *port)
