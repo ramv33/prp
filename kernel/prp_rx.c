@@ -182,8 +182,7 @@ static void prp_handle_sup(struct sk_buff *skb, struct node_entry *node,
 
 	ether_addr_copy(node->mac, source_mac);
 	/* node->san_a = node->san_b is set only here.
-	 * If both are false, window has already been allocated.
-	 * But it is possible, that allocation failed.
+	 * If allocation had failed in prp_add_node, retry it.
 	 */
 	node->san_a = node->san_b = false;
 	if (!node->window) {
