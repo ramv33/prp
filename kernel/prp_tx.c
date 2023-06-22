@@ -103,25 +103,18 @@ static int prp_pad_frame(struct sk_buff *skb, struct net_device *dev)
 	return 0;
 }
 
-static void send_san(struct sk_buff *skb, struct prp_priv *priv,
-		     bool san_a, bool san_b)
+static void send_san(struct sk_buff *skb, struct net_device *dev,
+		     struct prp_priv *priv, bool san_a, bool san_b)
 {
 	struct prp_port *ports = priv->ports;
-	struct sk_buff *skb_clone;
-
-	skb_clone = skb_clone(skb, GFP_ATOMIC);
-	if (!skb_clone) {
-		pr_err("%s: skb_clone failed\n");
-		break;
-	}
 
 	if (san_a)
-		skb_copy->dev = ports[0].dev;
+		skb->dev = ports[0].dev;
 	else
-		skb_copy->dev = ports[1].dev;
+		skb->dev = ports[1].dev;
 
-	skb_tx_timestamp(skb_copy);
-	if (dev_queue_xmit(skb_copy))
+	skb_tx_timestamp(skb);
+	if (dev_queue_xmit(skb))
 		netdev_warn(dev, "failed to send to san_%x\n", san_a ? 0xA : 0xB);
 
 	kfree_skb(skb);
@@ -149,7 +142,7 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		/* Both false => DANP. Both true => new entry */
 		if (node->san_a ^ node->san_b) {
 			read_unlock(&prp_priv->node_table_lock);
-			send_san(skb, prp_priv, node->san_a, node->san_b);
+			send_san(skb, dev, prp_priv, node->san_a, node->san_b);
 			return;
 		}
 	}
