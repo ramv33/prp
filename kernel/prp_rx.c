@@ -270,6 +270,9 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 	struct prp_rct *rct;
 	unsigned char *mac;
 
+	if (unlikely(!node->window))
+		return false;
+
 	rct = prp_get_rct(skb);
 	pr_info("%s: seqnr=%d\n", __func__, ntohs(rct->seqnr));
 
