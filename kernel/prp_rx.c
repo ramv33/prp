@@ -228,6 +228,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 			oldest = win[i].time;
 		}
 	}
+	pr_info("%s: i=%d, seqnr=%d\n", __func__, i, seqnr);
 	if (i < size) {
 		if (unlikely(win[i].seqnr == -1)) {
 			/* found free space */
@@ -244,6 +245,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 			win[i].time = now;
 		}
 	} else {
+		pr_info("%s: oi=%d\n", __func__, oi);
 		/* replace oldest entry */
 		win[oi].time = now;
 		win[oi].seqnr = seqnr;
