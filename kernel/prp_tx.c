@@ -175,9 +175,6 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 		skb_tx_timestamp(skb_copy);
 		if (dev_queue_xmit(skb_copy))
 			netdev_warn(dev, "failed to send over port %x", ports[i].lan);
-		else
-			PDEBUG("%s: sent over port %x: %s\n", __func__, ports[i].lan,
-				skb_copy->dev->name);
 	}
 	kfree_skb(skb);
 }
