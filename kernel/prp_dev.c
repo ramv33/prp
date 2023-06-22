@@ -172,9 +172,7 @@ int prp_port_setup(struct prp_priv *priv, struct net_device *slave,
 	struct net_device *prp;
 	int res;
 
-	PDEBUG("%s\n", __func__);
-
-	/* To listen to PRP supervision frames; try to implement ip maddr */
+	/* To listen to PRP supervision frames; TODO: sub to mcast */
 	res = dev_set_promiscuity(slave, 1);
 	if (res)
 		return res;
