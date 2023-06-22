@@ -60,19 +60,6 @@ static unsigned int hash_mac(unsigned char mac[ETH_ALEN], unsigned int nbuckets)
 }
 
 /**
- * init_window - Initialise the drop window.
- *		 Set .seqnr = -1 for all.
- * @win: Window
- */
-static void init_window(struct window *win)
-{
-	pr_info("%s\n", __func__);
-	/* use memset(0xff)? */
-	for (int i = 0; i < PRP_WINDOW_SIZE; i++)
-		win[i].seqnr = -1;
-}
-
-/**
  * prp_add_node - Allocate and add a new node with @mac to the node table.
  *	Returns the newly allocated node on success. The fields must be set
  *	by the caller. Does NOT check if @mac exists in the node table.
