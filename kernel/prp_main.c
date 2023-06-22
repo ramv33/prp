@@ -42,23 +42,23 @@ static int prp_netdev_notifier(struct notifier_block *nb, unsigned long event,
 		prp_check_carrier_and_operstate(dev);
 		break;
 	case NETDEV_CHANGEADDR:
-		PDEBUG("%s: change addr\n", name);
+		PDEBUG("%s: change addr\n", dev->name);
 		break;
 	case NETDEV_CHANGENAME:
-		PDEBUG("%s: change name\n", name);
+		PDEBUG("%s: change name\n", dev->name);
 		break;
 	case NETDEV_CHANGEMTU:
 		/* assert (MTU <= min(MTU of slaves) - RCT length) */
-		PDEBUG("%s: change mtu\n", name);
+		PDEBUG("%s: change mtu\n", dev->name);
 		break;
 	case NETDEV_UNREGISTER:
-		PDEBUG("%s: unregister\n", name);
+		PDEBUG("%s: unregister\n", dev->name);
 		break;
 	case NETDEV_PRE_TYPE_CHANGE:
 		/* PRP only for Ethernet devices, return error */
 		return NOTIFY_BAD;
 	case NETDEV_REGISTER:
-		PDEBUG("%s: register\n", name);
+		PDEBUG("%s: register\n", dev->name);
 		break;
 	}
 	return NOTIFY_OK;
