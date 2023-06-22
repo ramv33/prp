@@ -116,8 +116,6 @@ static void send_san(struct sk_buff *skb, struct net_device *dev,
 	skb_tx_timestamp(skb);
 	if (dev_queue_xmit(skb))
 		netdev_warn(dev, "failed to send to san_%x\n", san_a ? 0xA : 0xB);
-
-	kfree_skb(skb);
 }
 
 /**
