@@ -97,7 +97,7 @@ static int prp_dev_close(struct net_device *dev)
 /* Transmit packet */
 static netdev_tx_t prp_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
+	// PDEBUG("%s: PID=%d, dev=%s\n", __func__, current->pid, dev->name);
 
 	skb_reset_mac_header(skb);
 	skb_reset_mac_len(skb);
@@ -219,13 +219,13 @@ int prp_slave_ok(struct net_device *dev, struct netlink_ext_ack *extack)
 {
 	/* cannot use a PRP interface as a slave */
 	if (is_prp_master(dev)) {
-		PDEBUG("Device %s is already a PRP master\n", dev->name);
+		pr_info("Device %s is already a PRP master\n", dev->name);
 		NL_SET_ERR_MSG_MOD(extack, "Cannot use PRP master as a slave");
 		return -EINVAL;
 	}
 
 	if (is_prp_slave(dev)) {
-		PDEBUG("Device %s is already a PRP slave\n", dev->name);
+		pr_info("Device %s is already a PRP slave\n", dev->name);
 		NL_SET_ERR_MSG_MOD(extack, "Device is already a PRP slave");
 		return -EINVAL;
 	}
@@ -237,7 +237,7 @@ int prp_slave_ok(struct net_device *dev, struct netlink_ext_ack *extack)
 	// }
 
 	if (is_vlan_dev(dev)) {
-		PDEBUG("Device %s is a VLAN dev\n", dev->name);
+		pr_info("Device %s is a VLAN dev\n", dev->name);
 		NL_SET_ERR_MSG_MOD(extack, "Does not support VLAN yet");
 		return -EINVAL;
 	}
