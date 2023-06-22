@@ -375,7 +375,7 @@ int prp_dev_finalize(struct net_device *prp, struct net_device *slave[2],
 		printk("[prp]: %s: registration failed\n", __func__);
 		return ret;
 	}
-	PDEBUG("registered '%s' successfully\n", prp->name);
+	pr_info("registered '%s' successfully\n", prp->name);
 
 	/* Set slaves */
 	ret = prp_add_ports(priv, prp, slave, extack);
