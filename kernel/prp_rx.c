@@ -246,7 +246,7 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 	} else {
 		/* replace oldest entry */
 		win[oi].time = now;
-		win[oi].seqnr = jiffies;
+		win[oi].seqnr = seqnr;
 		is_dupe = false;
 	}
 
