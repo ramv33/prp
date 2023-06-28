@@ -63,18 +63,12 @@ inline void prp_add_rct(u8 lan, u16 seqnr, struct sk_buff *skb)
 static int prp_prepare_skb(u16 seqnr, u8 lan, struct sk_buff *skb,
 			   struct net_device *dev)
 {
-	struct ethhdr *ethhdr;
-	unsigned short proto;
-
 	/* Check if skb contains ethhdr */
 	if (skb->mac_len < sizeof(struct ethhdr)) {
 		pr_err("prp_prepare_skb failed, skb does not contain ethhdr: %d\n",
 			skb->mac_len);
 		return -EINVAL;
 	}
-
-	ethhdr = (struct ethhdr *)skb_mac_header(skb);
-	proto = ethhdr->h_proto;
 
 	prp_add_rct(lan, seqnr, skb);
 
