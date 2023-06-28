@@ -84,7 +84,7 @@ struct node_entry {
  * PRP net_device.priv structure
  * 
  * @ports:		Slave devices
- * @node_table:		Node table (TODO)
+ * @node_table:		Node table
  * @sup_seqnr:		Sequence number for supervision frames
  * @seqnr:		Sequence number for other frames
  * @sup_multicast_addr:	Multicast address to which supervision frames are sent
@@ -95,7 +95,7 @@ struct node_entry {
  */
 struct prp_priv {
 	struct prp_port			ports[2];
-	struct hlist_head		node_table[NODETABLE_SIZE]; // TODO
+	struct hlist_head		node_table[NODETABLE_SIZE];
 	rwlock_t			node_table_lock;
 	struct timer_list		sup_timer;
 	struct timer_list		prune_timer;
