@@ -217,6 +217,12 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 	int oi;		/* Index of oldest entry; used for replacement. */
 	int size, i;
 
+	/* TODO
+	 * 	Can do it without comparison to find the oldest element.
+	 * 	It really is just a circular buffer, we just need to keep
+	 * 	track of the first position and increment it (mod winsize).
+	 *	Can store this cursor in the struct window itself.
+	 */
 	oldest = now;
 	size = PRP_WINDOW_SIZE;
 	for (i = 0; i < size; i++) {
