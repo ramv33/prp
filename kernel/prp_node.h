@@ -25,7 +25,6 @@ static inline struct window *alloc_window(int winsize)
  */
 static void init_window(struct window *win)
 {
-	pr_info("%s\n", __func__);
 	/* use memset(0xff)? */
 	for (int i = 0; i < PRP_WINDOW_SIZE; i++)
 		win[i].seqnr = -1;

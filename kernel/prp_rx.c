@@ -278,20 +278,20 @@ static bool prp_is_duplicate(struct sk_buff *skb, struct node_entry *node,
 		return false;
 
 	rct = prp_get_rct(skb);
-	pr_info("%s: seqnr=%d\n", __func__, ntohs(rct->seqnr));
+	// pr_info("%s: seqnr=%d\n", __func__, ntohs(rct->seqnr));
 
 	mac = node->mac;
-	pr_info("%s: source=%02x:%02x:%02x:%02x:%02x:%02x, node@%p\n", __func__,
-		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], node);
+	// pr_info("%s: source=%02x:%02x:%02x:%02x:%02x:%02x, node@%p\n", __func__,
+	// 	mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], node);
 
 	return register_frame(node, ntohs(rct->seqnr), port->lan);
 }
 
 static void strip_rct(struct sk_buff *skb)
 {
-	skb_dump(KERN_ERR, skb, false);
+	// skb_dump(KERN_ERR, skb, false);
 	skb_trim(skb, skb->len - PRP_RCTLEN);
-	skb_dump(KERN_ERR, skb, false);
+	// skb_dump(KERN_ERR, skb, false);
 }
 
 /**

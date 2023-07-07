@@ -41,20 +41,11 @@ inline void prp_add_rct(u8 lan, u16 seqnr, struct sk_buff *skb)
 {
 	struct prp_rct *rct;
 
-	// PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
-	// 		skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	rct = skb_put(skb, PRP_RCTLEN);
-	// PDEBUG("skb->data=%p skb->len=%d, skb->tail=%p, skb->tail=%d",
-	// 		skb->data, skb->len, skb_tail_pointer(skb), skb->tail);
 	prp_set_lsdu_size(rct, skb);
 	rct->prp_suffix = htons(PRP_SUFFIX);
 	rct->seqnr = htons(seqnr);
 	prp_rct_set_lan_id(rct, lan);
-	// PDEBUG("last 6 bytes of skb");
-	// char *tail = (char *)rct + 5;
-	// for (char *p = (char *)rct; p <= tail; p++)
-	// 	PDEBUG("\t%02hhx", *p);
-	// PDEBUG("prp_add_rct done");
 }
 
 /**
@@ -125,8 +116,6 @@ void prp_send_skb(struct sk_buff *skb, struct net_device *dev)
 	struct sk_buff *skb_copy;
 	unsigned char *mac = eth_hdr(skb)->h_dest;
 	u16 seqnr;
-
-	PDEBUG("prp_send_skb");
 
 	read_lock(&prp_priv->node_table_lock);
 	node = prp_get_node(mac, prp_priv);
@@ -275,8 +264,6 @@ void prp_send_supervision(struct net_device *prp)
 		pr_err("%s: failed to pad to %d octets\n", __func__, ETH_ZLEN);
 		return;
 	}
-
-	pr_info("%s: supervision frame set up\n", __func__);
 
 	/* duplicate and append RCT */
 	prp_send_skb(skb, prp);
