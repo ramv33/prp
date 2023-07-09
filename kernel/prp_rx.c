@@ -238,7 +238,6 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 		if (unlikely(win[i].seqnr == -1)) {
 			/* found free space */
 			win[i].seqnr = seqnr;
-			win[i].time = now;
 			is_dupe = false;
 		} else {
 			/* found it */
@@ -247,8 +246,8 @@ static bool register_frame(struct node_entry *node, u16 seqnr, u8 lan)
 				is_dupe = false;
 			else
 				is_dupe = true;
-			win[i].time = now;
 		}
+		win[i].time = now;
 	} else {
 		win[oi].time = now;
 		win[oi].seqnr = seqnr;
